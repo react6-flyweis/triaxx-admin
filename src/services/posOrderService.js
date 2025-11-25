@@ -1,107 +1,70 @@
 // src/services/posOrderService.js
-import { getAuthToken } from '../utils/auth';
+import api from './apiClient';
 
-const API_BASE_URL = 'https://vercel-mr-clement-pos-backend.vercel.app/api/restaurant/pos_order';
+// base path for pos order endpoints (appends to axios baseURL)
+const PATH = '/restaurant/pos_order';
 
-const getHeaders = () => {
-  const token = getAuthToken();
-  if (!token) {
-    console.warn('No authentication token found');
-  }
-  return {
-    'Content-Type': 'application/json',
-    'Authorization': token ? `Bearer ${token}` : ''
-  };
-};
-
-const handleResponse = async (response) => {
-  if (response.status === 401) {
-    throw new Error('Authentication failed. Please ensure you are logged in.');
-  }
-  
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
-  }
-  
-  return await response.json();
+const handleAxiosError = (err) => {
+  // normalize axios errors into thrown Error with friendly message
+  const message = err?.response?.data?.message || err.message || 'Request failed';
+  const e = new Error(message);
+  e.status = err?.response?.status;
+  throw e;
 };
 
 export const posOrderService = {
   // Create a new POS order
   createOrder: async (orderData) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/create`, {
-        method: 'POST',
-        headers: getHeaders(),
-        body: JSON.stringify(orderData)
-      });
-      
-      return await handleResponse(response);
-    } catch (error) {
-      console.error('Error creating order:', error);
-      throw error;
+      const res = await api.post(`${PATH}/create`, orderData);
+      return res.data;
+    } catch (err) {
+      console.error('Error creating order:', err);
+      handleAxiosError(err);
     }
   },
 
   // Update an existing POS order
   updateOrder: async (orderData) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/update`, {
-        method: 'PUT',
-        headers: getHeaders(),
-        body: JSON.stringify(orderData)
-      });
-      
-      return await handleResponse(response);
-    } catch (error) {
-      console.error('Error updating order:', error);
-      throw error;
+      const res = await api.put(`${PATH}/update`, orderData);
+      return res.data;
+    } catch (err) {
+      console.error('Error updating order:', err);
+      handleAxiosError(err);
     }
   },
 
   // Get order by ID
   getOrderById: async (orderId) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/getbyid/${orderId}`, {
-        method: 'GET',
-        headers: getHeaders()
-      });
-      
-      return await handleResponse(response);
-    } catch (error) {
-      console.error('Error fetching order:', error);
-      throw error;
+      const res = await api.get(`${PATH}/getbyid/${orderId}`);
+      return res.data;
+    } catch (err) {
+      console.error('Error fetching order:', err);
+      handleAxiosError(err);
     }
   },
 
   // Get all orders
   getAllOrders: async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/getall`, {
-        method: 'GET',
-        headers: getHeaders()
-      });
-      
-      return await handleResponse(response);
-    } catch (error) {
-      console.error('Error fetching all orders:', error);
-      throw error;
+      const res = await api.get(`${PATH}/getall`);
+      return res.data;
+    } catch (err) {
+      console.error('Error fetching all orders:', err);
+      handleAxiosError(err);
     }
   },
 
   // Get my orders (authenticated user's orders)
   getMyOrders: async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/my-orders`, {
-        method: 'GET',
-        headers: getHeaders()
-      });
-      
-      return await handleResponse(response);
-    } catch (error) {
-      console.error('Error fetching my orders:', error);
-      throw error;
+      const res = await api.get(`${PATH}/auth/my-orders`);
+      return res.data;
+    } catch (err) {
+      console.error('Error fetching my orders:', err);
+      handleAxiosError(err);
     }
-  }
+  },
 };
