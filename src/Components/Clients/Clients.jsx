@@ -1,40 +1,47 @@
-import React, { useRef, useState } from 'react';
-import withAdminLayout from '../../Views/AdminPanel/withAdminLayout';
-import dot from '../../assets/Images/admin/client/dot.png';
-import { useNavigate } from 'react-router-dom';
-import logo from '../../assets/Images/Home/logo.png';
+import React, { useRef, useState } from "react";
+import withAdminLayout from "../../Views/AdminPanel/withAdminLayout";
+import dot from "../../assets/Images/admin/client/dot.png";
+import { useNavigate } from "react-router-dom";
+import logo from "../../assets/Images/Home/logo.png";
+import { useClients } from "../../hooks/useClients";
 
 const Clients = () => {
   const [selectedClientIndex, setSelectedClientIndex] = useState(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [selectedPeriod, setSelectedPeriod] = useState('All Clients');
+  const [selectedPeriod, setSelectedPeriod] = useState("All Clients");
   const [showRightPanel, setShowRightPanel] = useState(false);
   const buttonRefs = useRef([]);
   const navigate = useNavigate();
 
-  const clients = [
-    { id: '01', company: 'AOH Bar', renewalDate: 'March 01, 2025', plan: '3 months Plan' },
-    { id: '02', company: 'Jack n chill Bar', renewalDate: 'March 01, 2025', plan: '6 months Plan' },
-    { id: '03', company: 'Jack n chill Bar', renewalDate: 'March 01, 2025', plan: '3 months Plan' },
-    { id: '04', company: 'AOH Bar', renewalDate: 'June 01, 2025', plan: '01 Year Plan' },
-    { id: '05', company: 'AOH Bar', renewalDate: 'June 01, 2025', plan: '01 Year Plan' },
-    { id: '06', company: 'Jack n chill Bar', renewalDate: 'March 01, 2025', plan: '3 months Plan' },
-    { id: '07', company: 'Jack n chill Bar', renewalDate: 'March 01, 2025', plan: '6 months Plan' },
-    { id: '08', company: 'Jack n chill Bar', renewalDate: 'March 01, 2025', plan: '3 months Plan' },
-    { id: '09', company: 'AOH Bar', renewalDate: 'June 01, 2025', plan: '01 Year Plan' },
-    { id: '10', company: 'AOH Bar', renewalDate: 'June 01, 2025', plan: '01 Year Plan' },
-    { id: '11', company: 'Jack n chill Bar', renewalDate: 'March 01, 2025', plan: '3 months Plan' },
-    { id: '12', company: 'Jack n chill Bar', renewalDate: 'March 01, 2025', plan: '3 months Plan' },
-  ];
+  const [clients, setClients] = useState([]);
 
   const getPlanButtonStyle = () => {
-    return 'bg-gradient-to-b from-purple-700 to-red-600 text-white';
+    return "bg-gradient-to-b from-purple-700 to-red-600 text-white";
+  };
+
+  const normalizeClients = (response) => {
+    if (!response) return [];
+    // If the API returns a plain array
+    if (Array.isArray(response)) return response;
+    // Common shape: { success: true, count, data: [...] }
+    if (response.success && response.data)
+      return Array.isArray(response.data) ? response.data : [];
+    // Some endpoints wrap in `data` or `clients` keys
+    if (response.clients && Array.isArray(response.clients))
+      return response.clients;
+    if (response.data && Array.isArray(response.data.clients))
+      return response.data.clients;
+    return [];
   };
 
   const getDotTop = () => {
-    if (selectedClientIndex === null || !buttonRefs.current[selectedClientIndex]) return 0;
+    if (
+      selectedClientIndex === null ||
+      !buttonRefs.current[selectedClientIndex]
+    )
+      return 0;
     const btn = buttonRefs.current[selectedClientIndex];
-    const parent = btn.closest('.flex.h-full.relative');
+    const parent = btn.closest(".flex.h-full.relative");
     const btnRect = btn.getBoundingClientRect();
     const parentRect = parent.getBoundingClientRect();
     return btnRect.top - parentRect.top + btn.offsetHeight / 2 - 47;
@@ -50,22 +57,38 @@ const Clients = () => {
     setSelectedClientIndex(null);
   };
 
-  const dropdownOptions = [
-    'All Clients',
-    'Active Clients',
-    'Inactive Clients',
-  ];
+  const dropdownOptions = ["All Clients", "Active Clients", "Inactive Clients"];
+
+  // fetch clients via react-query
+  const {
+    data: rawClients,
+    isLoading,
+    isError,
+    error,
+  } = useClients({
+    onError: (err) => {
+      // keep this simple — components can show errors
+      console.error("Failed to fetch clients", err);
+    },
+  });
+
+  // derived normalized clients
+  React.useEffect(() => {
+    setClients(normalizeClients(rawClients));
+  }, [rawClients]);
 
   return (
     <div className="min-h-screen">
       <div className="w-full">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-8 gap-4 sm:gap-0 relative">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Clients</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">
+            Clients
+          </h1>
           <div className="flex flex-col sm:flex-row gap-4 sm:gap-48 items-start sm:items-center w-full sm:w-auto relative">
             <button
               className="bg-gradient-to-r from-[#6A1B9A] to-[#D32F2F] text-white px-4 sm:px-6 py-2 rounded-[8px] font-semibold hover:shadow-lg transition-all duration-200 flex items-center gap-2 w-full sm:w-auto justify-center"
-              onClick={() => navigate('/create-clients')}
+              onClick={() => navigate("/create-clients")}
             >
               Create Client
               <span className="text-lg">+</span>
@@ -92,8 +115,8 @@ const Clients = () => {
                       }}
                       className={`w-full text-left px-4 py-2 rounded text-[16px] font-[500] font-[Manrope] leading-[24px] ${
                         selectedPeriod === period
-                          ? 'bg-gradient-to-b from-[#6A1B9A] to-[#D32F2F] text-white'
-                          : 'text-black hover:bg-gray-100'
+                          ? "bg-gradient-to-b from-[#6A1B9A] to-[#D32F2F] text-white"
+                          : "text-black hover:bg-gray-100"
                       }`}
                     >
                       {period}
@@ -113,61 +136,106 @@ const Clients = () => {
             <div className="hidden sm:block bg-gradient-to-r from-purple-100 to-red-100 border-b border-gray-200 px-6 py-4">
               <div className="grid grid-cols-4 gap-4 items-center">
                 <div className="text-gray-600 font-semibold text-sm">#</div>
-                <div className="text-gray-600 font-semibold text-sm">Company Name</div>
-                <div className="text-gray-600 font-semibold text-sm">Renewal Date</div>
-                <div className="text-gray-600 font-semibold text-sm text-center">Plan</div>
+                <div className="text-gray-600 font-semibold text-sm">
+                  Company Name
+                </div>
+                <div className="text-gray-600 font-semibold text-sm">
+                  Renewal Date
+                </div>
+                <div className="text-gray-600 font-semibold text-sm text-center">
+                  Plan
+                </div>
               </div>
             </div>
 
             <div className="overflow-y-auto lg:max-h-none">
-              {clients.map((client, index) => (
-                <div
-                  key={index}
-                  className="border-b border-gray-200 px-4 sm:px-6 py-4 hover:bg-gray-50 transition-colors duration-150"
-                >
-                  {/* Desktop Row */}
-                  <div className="hidden sm:grid grid-cols-4 gap-4 items-center">
-                    <div className="text-gray-800 font-semibold text-sm">{client.id}</div>
-                    <div className="text-gray-800 font-semibold text-sm">{client.company}</div>
-                    <div className="text-red-500 font-normal text-sm">{client.renewalDate}</div>
-                    <div className="flex justify-center items-center gap-2">
-                      <button
-                        ref={(el) => (buttonRefs.current[index] = el)}
-                        onClick={() => setSelectedClientIndex(index)}
-                        className={`px-6 py-3 rounded-full text-sm font-semibold transition-all duration-200 hover:shadow-md cursor-pointer ${getPlanButtonStyle(client.plan)}`}
-                      >
-                        {client.plan}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Mobile Card */}
-                  <div className="sm:hidden space-y-3">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <div className="text-gray-500 text-xs font-medium">#{client.id}</div>
-                        <div className="text-gray-800 font-semibold text-base">{client.company}</div>
-                      </div>
-                      <button
-                        onClick={() => handleClientSelect(index)}
-                        className={`px-3 py-1 rounded-full text-xs font-semibold transition-all duration-200 hover:shadow-md cursor-pointer ${getPlanButtonStyle(client.plan)}`}
-                      >
-                        {client.plan}
-                      </button>
-                    </div>
-                    <div className="text-red-500 font-normal text-sm">
-                      Renewal: {client.renewalDate}
-                    </div>
-                  </div>
+              {isLoading ? (
+                <div className="p-6 text-center text-gray-600">
+                  Loading clients...
                 </div>
-              ))}
+              ) : isError ? (
+                <div className="p-6 text-center text-red-500">
+                  {error?.message || "Failed to load clients"}
+                </div>
+              ) : clients.length === 0 ? (
+                <div className="p-6 text-center text-gray-500">
+                  No clients found.
+                </div>
+              ) : (
+                clients.map((client, index) => (
+                  <div
+                    key={index}
+                    className="border-b border-gray-200 px-4 sm:px-6 py-4 hover:bg-gray-50 transition-colors duration-150"
+                  >
+                    {/* Desktop Row */}
+                    <div className="hidden sm:grid grid-cols-4 gap-4 items-center">
+                      <div className="text-gray-800 font-semibold text-sm">
+                        {client.Clients_id ?? client._id ?? index + 1}
+                      </div>
+                      <div className="text-gray-800 font-semibold text-sm">
+                        {client.Business_Name ?? client.company}
+                      </div>
+                      <div className="text-red-500 font-normal text-sm">
+                        {client.UpdatedAt
+                          ? new Date(client.UpdatedAt).toLocaleDateString()
+                          : client.CreateAt
+                          ? new Date(client.CreateAt).toLocaleDateString()
+                          : "--"}
+                      </div>
+                      <div className="flex justify-center items-center gap-2">
+                        <button
+                          ref={(el) => (buttonRefs.current[index] = el)}
+                          onClick={() => setSelectedClientIndex(index)}
+                          className={`px-6 py-3 rounded-full text-sm font-semibold transition-all duration-200 hover:shadow-md cursor-pointer ${getPlanButtonStyle(
+                            client.plan
+                          )}`}
+                        >
+                          {client.type ?? client.plan ?? "—"}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Mobile Card */}
+                    <div className="sm:hidden space-y-3">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <div className="text-gray-500 text-xs font-medium">
+                            #{client.Clients_id ?? client._id ?? index + 1}
+                          </div>
+                          <div className="text-gray-800 font-semibold text-base">
+                            {client.Business_Name ?? client.company}
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => handleClientSelect(index)}
+                          className={`px-3 py-1 rounded-full text-xs font-semibold transition-all duration-200 hover:shadow-md cursor-pointer ${getPlanButtonStyle(
+                            client.plan
+                          )}`}
+                        >
+                          {client.plan}
+                        </button>
+                      </div>
+                      <div className="text-red-500 font-normal text-sm">
+                        Renewal:{" "}
+                        {client.UpdatedAt
+                          ? new Date(client.UpdatedAt).toLocaleDateString()
+                          : client.CreateAt
+                          ? new Date(client.CreateAt).toLocaleDateString()
+                          : "--"}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
 
           {/* Right Panel - Desktop */}
           <div
             className="w-[27%] min-h-[600px] right-0 ml-auto rounded-tl-[10px] relative text-white hidden lg:flex flex-col items-center py-12 px-6"
-            style={{ background: 'linear-gradient(180deg, #6A1B9A 0%, #D32F2F 100%)' }}
+            style={{
+              background: "linear-gradient(180deg, #6A1B9A 0%, #D32F2F 100%)",
+            }}
           >
             {selectedClientIndex !== null && (
               <>
@@ -178,26 +246,34 @@ const Clients = () => {
                   style={{ top: `${getDotTop()}px` }}
                 />
 
-                <h2 className="text-2xl font-bold mb-6 tracking-wide">Company Name</h2>
+                <h2 className="text-2xl font-bold mb-6 tracking-wide">
+                  Company Name
+                </h2>
 
                 <div className="bg-white rounded-xl flex items-center justify-center w-[180px] h-[180px] mb-4">
                   <img src={logo} alt="logo" className="w-[120px] h-[20px]" />
                 </div>
 
-                <p className="text-lg font-medium mb-8">{clients[selectedClientIndex].plan}</p>
+                <p className="text-lg font-medium mb-8">
+                  {clients[selectedClientIndex].plan}
+                </p>
 
                 <div className="text-base text-white/80 font-medium mb-2">
                   Last Year Sales:
-                  <span className="text-white text-xl font-bold ml-2">30 412 XOF</span>
+                  <span className="text-white text-xl font-bold ml-2">
+                    30 412 XOF
+                  </span>
                 </div>
 
                 <div className="text-base text-white/80 font-medium mb-8">
                   Total orders Last Year:
-                  <span className="text-white text-xl font-bold ml-2">3 412</span>
+                  <span className="text-white text-xl font-bold ml-2">
+                    3 412
+                  </span>
                 </div>
 
                 <button
-                  onClick={() => navigate('/client-details')}
+                  onClick={() => navigate("/client-details")}
                   className="bg-white text-[#D32F2F] w-[140px] h-[38px] rounded-md text-base font-semibold hover:shadow-md transition-all duration-200"
                 >
                   View More &gt;
@@ -212,7 +288,9 @@ const Clients = () => {
           <div className="lg:hidden fixed inset-0  bg-opacity-50 z-50 flex items-end">
             <div
               className="w-full max-h-[80vh] overflow-y-auto rounded-t-[20px] text-white flex flex-col items-center py-8 px-6 animate-slide-up"
-              style={{ background: 'linear-gradient(180deg, #6A1B9A 0%, #D32F2F 100%)' }}
+              style={{
+                background: "linear-gradient(180deg, #6A1B9A 0%, #D32F2F 100%)",
+              }}
             >
               <button
                 onClick={closeRightPanel}
@@ -221,35 +299,49 @@ const Clients = () => {
                 ×
               </button>
 
-              <h2 className="text-xl font-bold mb-6 tracking-wide">Company Details</h2>
+              <h2 className="text-xl font-bold mb-6 tracking-wide">
+                Company Details
+              </h2>
 
               <div className="bg-white rounded-xl flex items-center justify-center w-[140px] h-[140px] mb-4">
                 <img src={logo} alt="logo" className="w-[100px] h-[16px]" />
               </div>
 
-              <h3 className="text-lg font-semibold mb-2">{clients[selectedClientIndex].company}</h3>
-              <p className="text-base font-medium mb-6">{clients[selectedClientIndex].plan}</p>
+              <h3 className="text-lg font-semibold mb-2">
+                {clients[selectedClientIndex].company}
+              </h3>
+              <p className="text-base font-medium mb-6">
+                {clients[selectedClientIndex].plan}
+              </p>
 
               <div className="w-full max-w-sm space-y-4 mb-8">
                 <div className="text-center">
-                  <div className="text-sm text-white/80 font-medium">Last Year Sales</div>
+                  <div className="text-sm text-white/80 font-medium">
+                    Last Year Sales
+                  </div>
                   <div className="text-white text-xl font-bold">30 412 XOF</div>
                 </div>
 
                 <div className="text-center">
-                  <div className="text-sm text-white/80 font-medium">Total Orders Last Year</div>
+                  <div className="text-sm text-white/80 font-medium">
+                    Total Orders Last Year
+                  </div>
                   <div className="text-white text-xl font-bold">3 412</div>
                 </div>
 
                 <div className="text-center">
-                  <div className="text-sm text-white/80 font-medium">Renewal Date</div>
-                  <div className="text-white text-base font-semibold">{clients[selectedClientIndex].renewalDate}</div>
+                  <div className="text-sm text-white/80 font-medium">
+                    Renewal Date
+                  </div>
+                  <div className="text-white text-base font-semibold">
+                    {clients[selectedClientIndex].renewalDate}
+                  </div>
                 </div>
               </div>
 
               <div className="flex gap-4 w-full max-w-sm">
                 <button
-                  onClick={() => navigate('/client-details')}
+                  onClick={() => navigate("/client-details")}
                   className="bg-white text-[#D32F2F] flex-1 py-3 rounded-md text-base font-semibold hover:shadow-md transition-all duration-200"
                 >
                   View Details
