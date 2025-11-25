@@ -1,14 +1,21 @@
-import React from 'react'
-import Sign from './Views/Sign/Sign'
-import ForgotPassword from './Components/SignIn/ForgotPassword'
-import AppRoutes from './Views/AppRoutes/AppRoutes'
+import AppRoutes from "./Views/AppRoutes/AppRoutes";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import ErrorBoundary from "./Components/UI/ErrorBoundary";
+
+const queryClient = new QueryClient();
+
+//
 
 function App() {
   return (
-    <div>
-      <AppRoutes/>
-    </div>
-  )
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <AppRoutes />
+        <ReactQueryDevtools initialIsOpen={false} />
+      </QueryClientProvider>
+    </ErrorBoundary>
+  );
 }
 
-export default App
+export default App;
