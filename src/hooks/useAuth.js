@@ -1,7 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
 import api from "../services/apiClient";
 import useStore from "../store/useStore";
-import { setAuthToken as persistToken } from "../utils/auth";
 
 // login using axios instance. New API shape returns { success, message, data: { token, user, ... } }
 async function loginFn({ payload }) {
@@ -23,8 +22,6 @@ export function useLogin(options = {}) {
         const token = data?.token;
         const user = data?.user;
         if (token) {
-          // store in persistent helpers and zustand
-          persistToken(token, !!variables?.remember);
           setToken(token, !!variables?.remember);
         }
 

@@ -1,9 +1,11 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { setAuthToken as persistToken, removeAuthToken } from "../utils/auth";
+import {
+  setAuthToken as persistToken,
+  removeAuthToken,
+  getAuthToken,
+} from "../utils/auth";
 
-// Simple app-wide store for auth & UI state. Uses local/session storage
-// persistence for convenience (via existing auth helpers).
 export const useStore = create(
   persist(
     (set) => ({
@@ -13,7 +15,7 @@ export const useStore = create(
 
       setToken: (token, remember = false) => {
         set({ token });
-        // mirror into storage helpers so other code can read it
+        // persist via helpers so we can choose session vs local storage
         persistToken(token, remember);
       },
 
@@ -28,10 +30,17 @@ export const useStore = create(
     }),
     {
       name: "clement-admin-storage",
-      // only persist token and user
-      partialize: (state) => ({ token: state.token, user: state.user }),
+      partialize: (state) => ({ user: state.user }),
     }
   )
 );
 
 export default useStore;
+
+export function hydrateAuth() {
+  const token = getAuthToken();
+  if (token) {
+    useStore.getState().setToken(token, false);
+  }
+  return token;
+}
