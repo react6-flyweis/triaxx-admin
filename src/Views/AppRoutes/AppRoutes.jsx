@@ -94,7 +94,7 @@ const AppRoutes = () => {
           <Route path="/top-performers-list" element={<TopPerformersMain />} />
           <Route path="/clients" element={<Clients />} />
           <Route path="/create-clients" element={<CreateClientForm />} />
-          <Route path="/client-details" element={<ClientDetails />} />
+          <Route path="/client-details/:id" element={<ClientDetails />} />
           <Route
             path="/renew-management"
             element={<SubscriptionManagement />}
