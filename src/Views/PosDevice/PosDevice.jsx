@@ -1,12 +1,8 @@
 import React, { useState } from "react";
-import { Plus, Eye, Edit, Trash2, RefreshCw } from "lucide-react";
+import { Plus, Edit, RefreshCw } from "lucide-react";
 import withAdminLayout from "../AdminPanel/withAdminLayout";
-import {
-  usePosOrders,
-  useCreateOrder,
-  useUpdateOrder,
-} from "../../hooks/usePosOrders";
-import useStore from "../../store/useStore";
+import { usePosOrders } from "../../hooks/usePosOrders";
+import OrderFormDialog from "../../Components/PosDevice/OrderFormDialog";
 
 import printer from "../../assets/Images/admin/Pos/printer.png";
 import system from "../../assets/Images/admin/Pos/system.png";
@@ -21,22 +17,6 @@ const PosDevice = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [error, setError] = useState("");
-  const [formData, setFormData] = useState({
-    items: [
-      {
-        item_id: "",
-        item_Quentry: 1,
-        item_Addons_id: "",
-        item_Variants_id: "",
-      },
-    ],
-    Tax: 0,
-    Customer_id: "",
-    Dining_Option: "Dine in",
-    Table_id: "",
-    Kitchen_id: "",
-    Status: true,
-  });
 
   const metrics = [
     {
@@ -91,375 +71,9 @@ const PosDevice = () => {
     setOrders(normalizeOrders(rawOrders));
   }, [rawOrders]);
 
-  const createMutation = useCreateOrder({
-    onSuccess: () => {
-      setShowCreateModal(false);
-      resetForm();
-      alert("Order created successfully!");
-    },
-    onError: (err) => {
-      setError(err.message || "Create failed");
-      alert(`Failed to create order: ${err.message}`);
-    },
-  });
-
-  const handleCreateOrder = async (e) => {
-    e.preventDefault();
-    try {
-      setError("");
-
-      // Convert string values to numbers
-      const processedData = {
-        ...formData,
-        items: formData.items.map((item) => ({
-          item_id: Number(item.item_id),
-          item_Quentry: Number(item.item_Quentry),
-          item_Addons_id: item.item_Addons_id
-            ? Number(item.item_Addons_id)
-            : null,
-          item_Variants_id: item.item_Variants_id
-            ? Number(item.item_Variants_id)
-            : null,
-        })),
-        Tax: Number(formData.Tax),
-        Customer_id: Number(formData.Customer_id),
-        Table_id: Number(formData.Table_id),
-        Kitchen_id: Number(formData.Kitchen_id),
-      };
-
-      createMutation.mutate(processedData);
-    } catch (error) {
-      console.error("Error creating order:", error);
-      setError(error.message);
-      alert(`Failed to create order: ${error.message}`);
-    }
-  };
-
-  const updateMutation = useUpdateOrder({
-    onSuccess: () => {
-      setShowEditModal(false);
-      resetForm();
-      alert("Order updated successfully!");
-    },
-    onError: (err) => {
-      setError(err.message || "Update failed");
-      alert(`Failed to update order: ${err.message}`);
-    },
-  });
-
-  const handleUpdateOrder = async (e) => {
-    e.preventDefault();
-    try {
-      setError("");
-      const processedData = {
-        id: Number(selectedOrder.id),
-        items: formData.items.map((item) => ({
-          item_id: Number(item.item_id),
-          item_Quentry: Number(item.item_Quentry),
-          item_Addons_id: item.item_Addons_id
-            ? Number(item.item_Addons_id)
-            : null,
-          item_Variants_id: item.item_Variants_id
-            ? Number(item.item_Variants_id)
-            : null,
-        })),
-        Tax: Number(formData.Tax),
-        Customer_id: Number(formData.Customer_id),
-        Dining_Option: formData.Dining_Option,
-        Table_id: Number(formData.Table_id),
-        Kitchen_id: Number(formData.Kitchen_id),
-        Status: formData.Status,
-      };
-
-      updateMutation.mutate(processedData);
-    } catch (error) {
-      console.error("Error updating order:", error);
-      setError(error.message);
-      alert(`Failed to update order: ${error.message}`);
-    }
-  };
-
   const handleEditClick = (order) => {
     setSelectedOrder(order);
-    setFormData({
-      items: order.items || [
-        {
-          item_id: "",
-          item_Quentry: 1,
-          item_Addons_id: "",
-          item_Variants_id: "",
-        },
-      ],
-      Tax: order.Tax || 0,
-      Customer_id: order.Customer_id || "",
-      Dining_Option: order.Dining_Option || "Dine in",
-      Table_id: order.Table_id || "",
-      Kitchen_id: order.Kitchen_id || "",
-      Status: order.Status !== undefined ? order.Status : true,
-    });
     setShowEditModal(true);
-  };
-
-  const resetForm = () => {
-    setFormData({
-      items: [
-        {
-          item_id: "",
-          item_Quentry: 1,
-          item_Addons_id: "",
-          item_Variants_id: "",
-        },
-      ],
-      Tax: 0,
-      Customer_id: "",
-      Dining_Option: "Dine in",
-      Table_id: "",
-      Kitchen_id: "",
-      Status: true,
-    });
-    setSelectedOrder(null);
-    setError("");
-  };
-
-  const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
-  };
-
-  const handleItemChange = (index, field, value) => {
-    const newItems = [...formData.items];
-    newItems[index][field] = value;
-    setFormData((prev) => ({ ...prev, items: newItems }));
-  };
-
-  const addItem = () => {
-    setFormData((prev) => ({
-      ...prev,
-      items: [
-        ...prev.items,
-        {
-          item_id: "",
-          item_Quentry: 1,
-          item_Addons_id: "",
-          item_Variants_id: "",
-        },
-      ],
-    }));
-  };
-
-  const removeItem = (index) => {
-    if (formData.items.length > 1) {
-      const newItems = formData.items.filter((_, i) => i !== index);
-      setFormData((prev) => ({ ...prev, items: newItems }));
-    }
-  };
-
-  const OrderModal = ({ show, onClose, onSubmit, title }) => {
-    if (!show) return null;
-
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-          <div className="p-6">
-            <h2 className="text-2xl font-bold mb-4">{title}</h2>
-            {error && (
-              <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm">
-                {error}
-              </div>
-            )}
-            <form onSubmit={onSubmit}>
-              {/* Items Section */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium mb-2">
-                  Order Items
-                </label>
-                {formData.items.map((item, index) => (
-                  <div key={index} className="border p-4 rounded mb-2">
-                    <div className="grid grid-cols-2 gap-4">
-                      <input
-                        type="number"
-                        placeholder="Item ID *"
-                        value={item.item_id}
-                        onChange={(e) =>
-                          handleItemChange(index, "item_id", e.target.value)
-                        }
-                        className="border p-2 rounded"
-                        required
-                      />
-                      <input
-                        type="number"
-                        placeholder="Quantity *"
-                        value={item.item_Quentry}
-                        onChange={(e) =>
-                          handleItemChange(
-                            index,
-                            "item_Quentry",
-                            e.target.value
-                          )
-                        }
-                        className="border p-2 rounded"
-                        min="1"
-                        required
-                      />
-                      <input
-                        type="number"
-                        placeholder="Addon ID (Optional)"
-                        value={item.item_Addons_id}
-                        onChange={(e) =>
-                          handleItemChange(
-                            index,
-                            "item_Addons_id",
-                            e.target.value
-                          )
-                        }
-                        className="border p-2 rounded"
-                      />
-                      <input
-                        type="number"
-                        placeholder="Variant ID (Optional)"
-                        value={item.item_Variants_id}
-                        onChange={(e) =>
-                          handleItemChange(
-                            index,
-                            "item_Variants_id",
-                            e.target.value
-                          )
-                        }
-                        className="border p-2 rounded"
-                      />
-                    </div>
-                    {formData.items.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => removeItem(index)}
-                        className="text-red-500 text-sm mt-2 hover:text-red-700"
-                      >
-                        Remove Item
-                      </button>
-                    )}
-                  </div>
-                ))}
-                <button
-                  type="button"
-                  onClick={addItem}
-                  className="text-blue-500 text-sm flex items-center gap-1 hover:text-blue-700"
-                >
-                  <Plus size={16} /> Add Item
-                </button>
-              </div>
-
-              {/* Other Fields */}
-              <div className="grid grid-cols-2 gap-4 mb-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Tax *
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    name="Tax"
-                    value={formData.Tax}
-                    onChange={handleInputChange}
-                    className="w-full border p-2 rounded"
-                    min="0"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Customer ID *
-                  </label>
-                  <input
-                    type="number"
-                    name="Customer_id"
-                    value={formData.Customer_id}
-                    onChange={handleInputChange}
-                    className="w-full border p-2 rounded"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Dining Option *
-                  </label>
-                  <select
-                    name="Dining_Option"
-                    value={formData.Dining_Option}
-                    onChange={handleInputChange}
-                    className="w-full border p-2 rounded"
-                    required
-                  >
-                    <option value="Dine in">Dine in</option>
-                    <option value="Takeaway">Takeaway</option>
-                    <option value="Delivery">Delivery</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Table ID *
-                  </label>
-                  <input
-                    type="number"
-                    name="Table_id"
-                    value={formData.Table_id}
-                    onChange={handleInputChange}
-                    className="w-full border p-2 rounded"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Kitchen ID *
-                  </label>
-                  <input
-                    type="number"
-                    name="Kitchen_id"
-                    value={formData.Kitchen_id}
-                    onChange={handleInputChange}
-                    className="w-full border p-2 rounded"
-                    required
-                  />
-                </div>
-                <div className="flex items-center">
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      name="Status"
-                      checked={formData.Status}
-                      onChange={handleInputChange}
-                      className="w-4 h-4"
-                    />
-                    <span className="text-sm font-medium">Active Status</span>
-                  </label>
-                </div>
-              </div>
-
-              <div className="flex gap-2 justify-end">
-                <button
-                  type="button"
-                  onClick={() => {
-                    onClose();
-                    resetForm();
-                  }}
-                  className="px-4 py-2 border rounded hover:bg-gray-100"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                >
-                  {title === "Create Order" ? "Create" : "Update"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      </div>
-    );
   };
 
   return (
@@ -473,9 +87,7 @@ const PosDevice = () => {
           <button
             onClick={() => refetch()}
             className="flex items-center gap-2 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
-            disabled={
-              isLoading || createMutation.isLoading || updateMutation.isLoading
-            }
+            disabled={isLoading}
           >
             <RefreshCw size={20} className={isLoading ? "animate-spin" : ""} />
             Refresh
@@ -487,7 +99,7 @@ const PosDevice = () => {
             <Plus size={20} />
             Create Order
           </button>
-          <SignOutButton />
+          {/* <SignOutButton /> */}
         </div>
       </div>
 
@@ -651,44 +263,24 @@ const PosDevice = () => {
         </div>
       </div>
 
-      {/* Modals */}
-      <OrderModal
-        show={showCreateModal}
-        onClose={() => {
-          setShowCreateModal(false);
-          resetForm();
-        }}
-        onSubmit={handleCreateOrder}
-        title="Create Order"
+      {/* Modals (shadcn dialog + react-hook-form) */}
+      <OrderFormDialog
+        open={showCreateModal}
+        onOpenChange={(val) => setShowCreateModal(val)}
+        mode="create"
+        onSuccess={() => alert("Order created successfully!")}
       />
-      <OrderModal
-        show={showEditModal}
-        onClose={() => {
-          setShowEditModal(false);
-          resetForm();
-        }}
-        onSubmit={handleUpdateOrder}
-        title="Edit Order"
+      <OrderFormDialog
+        open={showEditModal}
+        onOpenChange={(val) => setShowEditModal(val)}
+        mode="edit"
+        initialData={selectedOrder}
+        onSuccess={() => alert("Order updated successfully!")}
       />
     </div>
   );
 };
 
-const SignOutButton = () => {
-  const removeToken = useStore((s) => s.removeToken);
-  const token = useStore((s) => s.token);
-  if (!token) return null;
-  return (
-    <button
-      onClick={() => {
-        if (confirm("Sign out?")) removeToken();
-      }}
-      className="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
-      title="Sign out"
-    >
-      Sign out
-    </button>
-  );
-};
+const PosDeviceWithLayout = withAdminLayout(PosDevice);
 
-export default withAdminLayout(PosDevice);
+export default PosDeviceWithLayout;
