@@ -11,9 +11,13 @@ const Clients = () => {
   const [selectedPeriod, setSelectedPeriod] = useState("All Clients");
   const [showRightPanel, setShowRightPanel] = useState(false);
   const buttonRefs = useRef([]);
+  const rightPanelRef = useRef(null);
+  const mainContentRef = useRef(null);
+  const tableScrollRef = useRef(null);
   const navigate = useNavigate();
 
   const [clients, setClients] = useState([]);
+  const [dotPosition, setDotPosition] = useState({ top: 12, left: 0 });
 
   const getPlanButtonStyle = () => {
     return "bg-gradient-to-b from-purple-700 to-red-600 text-white";
@@ -34,18 +38,46 @@ const Clients = () => {
     return [];
   };
 
-  const getDotTop = () => {
+  const computeDotPosition = React.useCallback(() => {
     if (
       selectedClientIndex === null ||
-      !buttonRefs.current[selectedClientIndex]
+      !buttonRefs.current[selectedClientIndex] ||
+      !rightPanelRef.current ||
+      !mainContentRef.current
     )
-      return 0;
+      return { top: 12, left: 0 };
+
     const btn = buttonRefs.current[selectedClientIndex];
-    const parent = btn.closest(".flex.h-full.relative");
     const btnRect = btn.getBoundingClientRect();
-    const parentRect = parent.getBoundingClientRect();
-    return btnRect.top - parentRect.top + btn.offsetHeight / 2 - 47;
-  };
+    const panelRect = rightPanelRef.current.getBoundingClientRect();
+    const containerRect = mainContentRef.current.getBoundingClientRect();
+
+    const rawTop = btnRect.top - containerRect.top + btnRect.height / 2 - 16;
+    const clampedTop = Math.max(
+      12,
+      Math.min(containerRect.height - 32, rawTop)
+    );
+    const rawLeft = panelRect.left - containerRect.left - 38;
+    const clampedLeft = Math.max(0, rawLeft);
+
+    return { top: clampedTop, left: clampedLeft };
+  }, [selectedClientIndex]);
+
+  React.useEffect(() => {
+    const update = () => {
+      setDotPosition(computeDotPosition());
+    };
+
+    update();
+    const scrollElement = tableScrollRef.current;
+    scrollElement?.addEventListener("scroll", update);
+    window.addEventListener("resize", update);
+
+    return () => {
+      scrollElement?.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+    };
+  }, [computeDotPosition, clients.length]);
 
   const handleClientSelect = (index) => {
     setSelectedClientIndex(index);
@@ -77,6 +109,20 @@ const Clients = () => {
     setClients(normalizeClients(rawClients));
   }, [rawClients]);
 
+  const selectedClient =
+    selectedClientIndex !== null && clients[selectedClientIndex]
+      ? clients[selectedClientIndex]
+      : null;
+
+  const formatDate = (d) => {
+    if (!d) return "--";
+    try {
+      return new Date(d).toLocaleDateString();
+    } catch {
+      return d;
+    }
+  };
+
   return (
     <div className="min-h-screen">
       <div className="w-full">
@@ -87,7 +133,7 @@ const Clients = () => {
           </h1>
           <div className="flex flex-col sm:flex-row gap-4 sm:gap-48 items-start sm:items-center w-full sm:w-auto relative">
             <button
-              className="bg-gradient-to-r from-[#6A1B9A] to-[#D32F2F] text-white px-4 sm:px-6 py-2 rounded-[8px] font-semibold hover:shadow-lg transition-all duration-200 flex items-center gap-2 w-full sm:w-auto justify-center"
+              className="bg-linear-to-r from-[#6A1B9A] to-[#D32F2F] text-white px-4 sm:px-6 py-2 rounded-xl font-semibold hover:shadow-lg transition-all duration-200 flex items-center gap-2 w-full sm:w-auto justify-center"
               onClick={() => navigate("/create-clients")}
             >
               Create Client
@@ -113,9 +159,9 @@ const Clients = () => {
                         setSelectedPeriod(period);
                         setDropdownOpen(false);
                       }}
-                      className={`w-full text-left px-4 py-2 rounded text-[16px] font-[500] font-[Manrope] leading-[24px] ${
+                      className={`w-full text-left px-4 py-2 rounded text-[16px] font-medium font-[Manrope] leading-6 ${
                         selectedPeriod === period
-                          ? "bg-gradient-to-b from-[#6A1B9A] to-[#D32F2F] text-white"
+                          ? "bg-linear-to-b from-[#6A1B9A] to-[#D32F2F] text-white"
                           : "text-black hover:bg-gray-100"
                       }`}
                     >
@@ -129,11 +175,25 @@ const Clients = () => {
         </div>
 
         {/* Main Content */}
-        <div className="flex flex-col lg:flex-row h-full relative gap-4 lg:gap-0">
+        <div
+          className="flex flex-col lg:flex-row h-full relative gap-4 lg:gap-8 overflow-visible min-h-0"
+          ref={mainContentRef}
+        >
+          {selectedClientIndex !== null && (
+            <img
+              src={dot}
+              alt="dot"
+              className="absolute z-50 pointer-events-none"
+              style={{
+                top: dotPosition.top,
+                left: dotPosition.left,
+              }}
+            />
+          )}
           {/* Table */}
-          <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-200 w-full lg:w-[70%]">
+          <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-200 w-full lg:w-[70%] flex-1 min-h-0">
             {/* Desktop Table Header */}
-            <div className="hidden sm:block bg-gradient-to-r from-purple-100 to-red-100 border-b border-gray-200 px-6 py-4">
+            <div className="hidden sm:block bg-linear-to-r from-purple-100 to-red-100 border-b border-gray-200 px-6 py-4">
               <div className="grid grid-cols-4 gap-4 items-center">
                 <div className="text-gray-600 font-semibold text-sm">#</div>
                 <div className="text-gray-600 font-semibold text-sm">
@@ -148,10 +208,39 @@ const Clients = () => {
               </div>
             </div>
 
-            <div className="overflow-y-auto lg:max-h-none">
+            <div
+              ref={tableScrollRef}
+              className="overflow-y-auto h-full"
+              style={{ maxHeight: "calc(100vh - 100px)", overflowY: "auto" }}
+            >
               {isLoading ? (
-                <div className="p-6 text-center text-gray-600">
-                  Loading clients...
+                <div className="p-4 space-y-3">
+                  {Array.from({ length: 8 }).map((_, i) => (
+                    <div
+                      key={`skeleton-${i}`}
+                      className="border-b border-gray-200 px-4 sm:px-6 py-4"
+                    >
+                      <div className="hidden sm:grid grid-cols-4 gap-4 items-center">
+                        <div className="h-4 bg-gray-200 rounded w-8 animate-pulse" />
+                        <div className="h-4 bg-gray-200 rounded w-40 animate-pulse" />
+                        <div className="h-4 bg-gray-200 rounded w-28 animate-pulse" />
+                        <div className="flex justify-center items-center">
+                          <div className="h-8 w-24 bg-gray-200 rounded-full animate-pulse" />
+                        </div>
+                      </div>
+
+                      <div className="sm:hidden space-y-3">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <div className="h-3 bg-gray-200 rounded w-12 animate-pulse mb-2" />
+                            <div className="h-4 bg-gray-200 rounded w-36 animate-pulse" />
+                          </div>
+                          <div className="h-6 w-16 bg-gray-200 rounded-full animate-pulse" />
+                        </div>
+                        <div className="h-3 bg-gray-200 rounded w-48 animate-pulse mt-2" />
+                      </div>
+                    </div>
+                  ))}
                 </div>
               ) : isError ? (
                 <div className="p-6 text-center text-red-500">
@@ -231,55 +320,105 @@ const Clients = () => {
           </div>
 
           {/* Right Panel - Desktop */}
-          <div
-            className="w-[27%] min-h-[600px] right-0 ml-auto rounded-tl-[10px] relative text-white hidden lg:flex flex-col items-center py-12 px-6"
-            style={{
-              background: "linear-gradient(180deg, #6A1B9A 0%, #D32F2F 100%)",
-            }}
-          >
-            {selectedClientIndex !== null && (
-              <>
-                <img
-                  src={dot}
-                  alt="dot"
-                  className="absolute left-[-40px]"
-                  style={{ top: `${getDotTop()}px` }}
-                />
+          <div className="w-full lg:w-[27%] hidden lg:flex relative">
+            <div
+              ref={rightPanelRef}
+              className="sticky top-24 min-h-[600px] rounded-tl-[10px] text-white flex flex-col items-center py-12 px-6 overflow-x-visible overflow-y-auto"
+              style={{
+                background: "linear-gradient(180deg, #6A1B9A 0%, #D32F2F 100%)",
+                maxHeight: "calc(100vh - 160px)",
+              }}
+            >
+              {selectedClient ? (
+                <>
+                  <h2 className="text-2xl font-bold mb-6 tracking-wide">
+                    {selectedClient.Business_Name ||
+                      selectedClient.company ||
+                      selectedClient.BusinessName ||
+                      "Company Name"}
+                  </h2>
 
-                <h2 className="text-2xl font-bold mb-6 tracking-wide">
-                  Company Name
-                </h2>
+                  <div className="bg-white rounded-xl flex items-center justify-center w-[180px] h-[180px] mb-4">
+                    <img
+                      src={
+                        selectedClient.logo ||
+                        selectedClient.Business_Logo ||
+                        selectedClient.businessLogo ||
+                        logo
+                      }
+                      alt="logo"
+                      className="w-[120px] h-5 object-contain"
+                    />
+                  </div>
 
-                <div className="bg-white rounded-xl flex items-center justify-center w-[180px] h-[180px] mb-4">
-                  <img src={logo} alt="logo" className="w-[120px] h-[20px]" />
+                  <p className="text-lg font-medium mb-2">
+                    {selectedClient.plan || selectedClient.type || "—"}
+                  </p>
+
+                  <div className="text-base text-white/80 font-medium mb-2">
+                    Renewal Date:
+                    <span className="text-white text-xl font-bold ml-2">
+                      {formatDate(
+                        selectedClient.UpdatedAt ||
+                          selectedClient.CreateAt ||
+                          selectedClient.renewalDate
+                      )}
+                    </span>
+                  </div>
+
+                  <div className="text-base text-white/80 font-medium mb-2">
+                    Last Year Sales:
+                    <span className="text-white text-xl font-bold ml-2">
+                      {selectedClient.lastYearSales ||
+                        selectedClient.LastYearSales ||
+                        "30 412 XOF"}
+                    </span>
+                  </div>
+
+                  <div className="text-base text-white/80 font-medium mb-8">
+                    Total orders Last Year:
+                    <span className="text-white text-xl font-bold ml-2">
+                      {selectedClient.totalOrders ||
+                        selectedClient.Total_Orders ||
+                        selectedClient.TotalOrders ||
+                        "3 412"}
+                    </span>
+                  </div>
+
+                  {(selectedClient.Email ||
+                    selectedClient.email ||
+                    selectedClient.contact ||
+                    selectedClient.phone) && (
+                    <div className="text-sm text-white/90 mb-6 text-center">
+                      {selectedClient.Email ||
+                        selectedClient.email ||
+                        selectedClient.contact ||
+                        selectedClient.phone}
+                    </div>
+                  )}
+
+                  <button
+                    onClick={() =>
+                      navigate(
+                        `/client-details/${selectedClient?.Clients_id || ""}`
+                      )
+                    }
+                    className="bg-white text-[#D32F2F] w-[140px] h-[38px] rounded-md text-base font-semibold hover:shadow-md transition-all duration-200"
+                  >
+                    View More &gt;
+                  </button>
+                </>
+              ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center text-white/90">
+                  <div className="text-lg font-semibold mb-2">
+                    No client selected
+                  </div>
+                  <div className="text-sm text-white/80">
+                    Select a client from the table to see details
+                  </div>
                 </div>
-
-                <p className="text-lg font-medium mb-8">
-                  {clients[selectedClientIndex].plan}
-                </p>
-
-                <div className="text-base text-white/80 font-medium mb-2">
-                  Last Year Sales:
-                  <span className="text-white text-xl font-bold ml-2">
-                    30 412 XOF
-                  </span>
-                </div>
-
-                <div className="text-base text-white/80 font-medium mb-8">
-                  Total orders Last Year:
-                  <span className="text-white text-xl font-bold ml-2">
-                    3 412
-                  </span>
-                </div>
-
-                <button
-                  onClick={() => navigate("/client-details")}
-                  className="bg-white text-[#D32F2F] w-[140px] h-[38px] rounded-md text-base font-semibold hover:shadow-md transition-all duration-200"
-                >
-                  View More &gt;
-                </button>
-              </>
-            )}
+              )}
+            </div>
           </div>
         </div>
 
@@ -304,14 +443,26 @@ const Clients = () => {
               </h2>
 
               <div className="bg-white rounded-xl flex items-center justify-center w-[140px] h-[140px] mb-4">
-                <img src={logo} alt="logo" className="w-[100px] h-[16px]" />
+                <img
+                  src={
+                    selectedClient?.logo ||
+                    selectedClient?.Business_Logo ||
+                    selectedClient?.businessLogo ||
+                    logo
+                  }
+                  alt="logo"
+                  className="w-[100px] h-4 object-contain"
+                />
               </div>
 
               <h3 className="text-lg font-semibold mb-2">
-                {clients[selectedClientIndex].company}
+                {selectedClient?.Business_Name ||
+                  selectedClient?.company ||
+                  selectedClient?.BusinessName ||
+                  "-"}
               </h3>
               <p className="text-base font-medium mb-6">
-                {clients[selectedClientIndex].plan}
+                {selectedClient?.plan || selectedClient?.type || "-"}
               </p>
 
               <div className="w-full max-w-sm space-y-4 mb-8">
@@ -319,14 +470,23 @@ const Clients = () => {
                   <div className="text-sm text-white/80 font-medium">
                     Last Year Sales
                   </div>
-                  <div className="text-white text-xl font-bold">30 412 XOF</div>
+                  <div className="text-white text-xl font-bold">
+                    {selectedClient?.lastYearSales ||
+                      selectedClient?.LastYearSales ||
+                      "30 412 XOF"}
+                  </div>
                 </div>
 
                 <div className="text-center">
                   <div className="text-sm text-white/80 font-medium">
                     Total Orders Last Year
                   </div>
-                  <div className="text-white text-xl font-bold">3 412</div>
+                  <div className="text-white text-xl font-bold">
+                    {selectedClient?.totalOrders ||
+                      selectedClient?.Total_Orders ||
+                      selectedClient?.TotalOrders ||
+                      "3 412"}
+                  </div>
                 </div>
 
                 <div className="text-center">
@@ -334,14 +494,27 @@ const Clients = () => {
                     Renewal Date
                   </div>
                   <div className="text-white text-base font-semibold">
-                    {clients[selectedClientIndex].renewalDate}
+                    {formatDate(
+                      selectedClient?.UpdatedAt ||
+                        selectedClient?.CreateAt ||
+                        selectedClient?.renewalDate
+                    )}
                   </div>
                 </div>
               </div>
 
               <div className="flex gap-4 w-full max-w-sm">
                 <button
-                  onClick={() => navigate("/client-details")}
+                  onClick={() =>
+                    navigate(
+                      `/client-details/${
+                        selectedClient?.Clients_id ||
+                        selectedClient?._id ||
+                        selectedClient?.id ||
+                        ""
+                      }`
+                    )
+                  }
                   className="bg-white text-[#D32F2F] flex-1 py-3 rounded-md text-base font-semibold hover:shadow-md transition-all duration-200"
                 >
                   View Details
@@ -375,4 +548,5 @@ const Clients = () => {
   );
 };
 
-export default withAdminLayout(Clients);
+const ClientsWithLayout = withAdminLayout(Clients);
+export default ClientsWithLayout;
