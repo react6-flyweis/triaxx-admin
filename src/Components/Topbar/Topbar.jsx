@@ -1,8 +1,9 @@
-import React, { useState } from "react";
-import { Search, Menu, Bell, ChevronDown, User } from "lucide-react";
+import { useState } from "react";
+import { Search, Menu, Bell, ChevronDown } from "lucide-react";
 import useStore from "../../store/useStore";
-import porfileImg from "../../assets/Images/admin/Avatar.png";
+import porfileImg from "../../assets/Images/admin/SidebarIcon/profileAvatar.png";
 import { useNavigate } from "react-router-dom";
+import { useLogout } from "../../hooks/useAuth";
 
 const Topbar = ({ onMenuClick }) => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -10,7 +11,7 @@ const Topbar = ({ onMenuClick }) => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const navigate = useNavigate();
   const user = useStore((state) => state.user);
-  const removeToken = useStore((state) => state.removeToken);
+  const logout = useLogout();
 
   return (
     <div className="w-full bg-white border-b border-gray-200 shadow-sm">
@@ -108,13 +109,16 @@ const Topbar = ({ onMenuClick }) => {
                 <button
                   onClick={() => {
                     setIsProfileOpen(false);
-                    removeToken();
-                    // send to sign-in flow
-                    navigate("/sign-in");
+                    logout.mutate(undefined, {
+                      onSettled: () => {
+                        navigate("/");
+                      },
+                    });
                   }}
-                  className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm text-red-600 font-medium"
+                  disabled={logout.isPending}
+                  className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm text-red-600 font-medium disabled:opacity-60"
                 >
-                  Sign out
+                  {logout.isPending ? "Signing out..." : "Sign out"}
                 </button>
               </div>
             )}
