@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import AppRoutes from "./Views/AppRoutes/AppRoutes";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-import ErrorBoundary from "./Components/UI/ErrorBoundary";
+import ErrorBoundary from "./Components/ui/ErrorBoundary";
 import { hydrateAuth } from "./store/useStore";
 
 const queryClient = new QueryClient();
