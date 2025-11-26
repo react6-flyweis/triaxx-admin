@@ -42,3 +42,38 @@ export function useLogin(options = {}) {
 }
 
 export default useLogin;
+
+export function useLogout(options = {}) {
+  const removeToken = useStore((s) => s.removeToken);
+  const setUser = useStore((s) => s.setUser);
+
+  return useMutation({
+    mutationFn: () => api.post("/user/logout"),
+    ...(options || {}),
+    onSuccess: (data, variables, context) => {
+      try {
+        if (typeof removeToken === "function") removeToken();
+        if (typeof setUser === "function") setUser(null);
+      } catch {
+        // swallow
+      }
+
+      if (typeof options.onSuccess === "function") {
+        return options.onSuccess(data, variables, context);
+      }
+    },
+    onError: (err, variables, context) => {
+      // Ensure client clears auth even if server logout fails
+      try {
+        if (typeof removeToken === "function") removeToken();
+        if (typeof setUser === "function") setUser(null);
+      } catch {
+        // swallow
+      }
+
+      if (typeof options.onError === "function") {
+        return options.onError(err, variables, context);
+      }
+    },
+  });
+}
