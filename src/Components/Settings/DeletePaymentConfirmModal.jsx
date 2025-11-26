@@ -1,57 +1,67 @@
-import React, { useState } from 'react';
-import { AlertTriangle } from 'lucide-react';
-import deleteIcon from '../../assets/Images/Home/delete.png';
+import deleteIcon from "../../assets/Images/Home/delete.png";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from "../ui/dialog";
 
-// Modal Component
-const DeletePaymentConfirmModal = ({ isOpen, onClose, onConfirm, title, description }) => {
-  if (!isOpen) return null;
-  
+// Modal Component using shared Dialog
+const DeletePaymentConfirmModal = ({
+  isOpen,
+  onClose,
+  onConfirm,
+  isLoading = false,
+  title,
+  description,
+}) => {
   return (
-    <div className="fixed inset-0  bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-3xl p-8 max-w-md w-full mx-4 shadow-2xl">
-        {/* Content Container */}
-        <div className="flex flex-col items-center space-y-6">
-          {/* Header Section */}
-          <div className="flex flex-col items-center space-y-4 w-full">
-            {/* Warning Icon */}
-           <img src={deleteIcon}/>
-             
-            {/* Title and Description */}
-            <div className="flex flex-col items-center space-y-2 w-full">
-              <h1 className="text-xl font-bold text-black text-center leading-tight font-sans">
-                {title || "Are you Sure ?"}
-              </h1>
-             
-              <p className="text-sm text-gray-600 text-center leading-tight font-sans mt-2">
-                {description || "You can see you employees roles and responsibilities, you can delete you employees as well"}
-              </p>
+    <Dialog
+      open={!!isOpen}
+      onOpenChange={(open) => !open && onClose && onClose()}
+    >
+      <DialogContent className="p-6 rounded-xl max-w-md w-full">
+        <div className="flex flex-col items-center gap-4">
+          <img src={deleteIcon} alt="delete" className="w-14 h-14" />
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-black text-center">
+              {title || "Are you sure?"}
+            </DialogTitle>
+            <DialogDescription className="text-sm text-gray-600 text-center">
+              {description ||
+                "This action will permanently delete the payment method."}
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter>
+            <div className="flex gap-3 w-full">
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex-1 px-4 py-2 border rounded-lg bg-white"
+                disabled={isLoading}
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                onClick={onConfirm}
+                className="flex-1 px-4 py-2 rounded-lg bg-linear-to-b from-purple-700 to-red-600 text-white disabled:opacity-60"
+                disabled={isLoading}
+              >
+                {isLoading ? "Deleting..." : "Yes, Delete"}
+              </button>
             </div>
-          </div>
-          
-          {/* Buttons Section */}
-          <div className="flex flex-col items-center space-y-3 w-full">
-            {/* Delete Button */}
-            <button
-              onClick={onConfirm}
-              className="w-full h-12 bg-gradient-to-r from-purple-600 to-red-600 text-white text-base font-medium rounded-xl hover:from-purple-700 hover:to-red-700 transition-all duration-200 font-sans"
-            >
-              Yes Delete
-            </button>
-           
-            {/* Cancel Button */}
-            <button
-              onClick={onClose}
-              className="w-full h-12 bg-transparent border-2  text-base font-medium rounded-xl border-gradient"
-            >
-              No Don't
-            </button>
-          </div>
+          </DialogFooter>
         </div>
-      </div>
-    </div>
+        <DialogClose />
+      </DialogContent>
+    </Dialog>
   );
 };
 
-
-
-export default DeletePaymentConfirmModal
+export default DeletePaymentConfirmModal;
