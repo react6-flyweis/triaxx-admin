@@ -1,39 +1,69 @@
-import React from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "../ui/dialog";
 
-const AddPaymentModal = ({ isOpen, onClose, onSave, paymentMode, setPaymentMode }) => {
-  if (!isOpen) return null;
-
+const AddPaymentModal = ({
+  isOpen,
+  onClose,
+  onSave,
+  paymentMode,
+  setPaymentMode,
+}) => {
   return (
-    <div className="fixed inset-0  bg-opacity-30 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg w-full max-w-md shadow-lg">
-        {/* Header */}
-        <div className="flex justify-between items-center border-b p-4">
-          <h2 className="text-xl font-bold">Add Payment</h2>
-          <button onClick={onClose} className="text-xl font-bold">×</button>
-        </div>
-
-        {/* Form */}
-        <div className="p-6 space-y-6">
-          <div>
-            <label className="block text-sm font-medium mb-2">Enter Payment mode</label>
-            <input
-              type="text"
-              className="w-full border rounded px-4 py-2"
-              value={paymentMode}
-              onChange={(e) => setPaymentMode(e.target.value)}
-              placeholder="e.g., PhonePe"
-            />
+    <Dialog open={isOpen} onOpenChange={(v) => !v && onClose && onClose()}>
+      <DialogContent className="p-0 rounded-lg max-w-md w-full">
+        <div className="bg-white rounded-lg w-full shadow-lg">
+          <div className="flex justify-between items-center border-b p-4">
+            <DialogHeader>
+              <DialogTitle>Add Payment</DialogTitle>
+            </DialogHeader>
           </div>
 
-          <button
-            onClick={onSave}
-            className="w-full py-3 text-white font-medium  bg-gradient-to-r from-purple-700 to-red-500 hover:opacity-90 rounded-2xl"
+          <form
+            className="p-6 space-y-6"
+            onSubmit={(e) => {
+              e.preventDefault();
+              onSave && onSave();
+            }}
           >
-            Save Changes
-          </button>
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Enter Payment mode
+              </label>
+              <input
+                type="text"
+                className="w-full border rounded px-4 py-2"
+                value={paymentMode}
+                onChange={(e) => setPaymentMode(e.target.value)}
+                placeholder="e.g., PhonePe"
+              />
+            </div>
+
+            <DialogFooter>
+              <div className="flex gap-3 w-full">
+                <button
+                  type="button"
+                  onClick={() => onClose && onClose()}
+                  className="flex-1 px-4 py-2 border rounded-lg bg-white"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-2 rounded-lg bg-linear-to-r from-purple-700 to-red-600 text-white"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </DialogFooter>
+          </form>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 
