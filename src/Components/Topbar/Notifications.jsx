@@ -1,99 +1,76 @@
-import React from 'react';
-import withAdminLayout from '../../Views/AdminPanel/withAdminLayout';
-import profileImg from '../../assets/Images/admin/Avatar.png';
+import React from "react";
+import withAdminLayout from "../../Views/AdminPanel/withAdminLayout";
+import profileImg from "../../assets/Images/admin/SidebarIcon/profileAvatar.png";
+import { useQuery } from "@tanstack/react-query";
+import { getAllNotifications } from "../../services/notificationsService";
 
-const notificationsData = {
-  Today: [
-    {
-      id: 1,
-      name: 'Brian Griffin',
-      action: 'wants to collaborate',
-      time: '5 minutes ago',
-      avatar: profileImg,
-    },
-  ],
-  Yesterday: [
-    {
-      id: 2,
-      name: 'Brian Griffin',
-      action: 'sent you a message',
-      time: 'Yesterday at 2:00 PM',
-      avatar: profileImg,
-    },
-    {
-      id: 3,
-      name: 'You',
-      action: 'were mentioned in a comment',
-      time: 'Yesterday at 4:30 PM',
-      avatar: profileImg,
-    },
-  ],
-  'This Week': [
-    {
-      id: 4,
-      name: 'Brian Griffin',
-      action: 'wants to collaborate',
-      time: '5 days ago',
-      avatar: profileImg,
-    },
-    {
-      id: 5,
-      name: 'Brian Griffin',
-      action: 'wants to collaborate',
-      time: '5 days ago',
-      avatar: profileImg,
-    },
-  ],
-  'This Month': [
-    {
-      id: 6,
-      name: 'Brian Griffin',
-      action: 'wants to collaborate',
-      time: '5 days ago',
-      avatar: profileImg,
-    },
-    {
-      id: 7,
-      name: 'Brian Griffin',
-      action: 'wants to collaborate',
-      time: '5 days ago',
-      avatar: profileImg,
-    },
-    {
-      id: 8,
-      name: 'Brian Griffin',
-      action: 'wants to collaborate',
-      time: '5 days ago',
-      avatar: profileImg,
-    },
-  ],
-};
+function formatTime(iso) {
+  try {
+    return new Date(iso).toLocaleString();
+  } catch {
+    return "";
+  }
+}
 
 const Notifications = () => {
+  const {
+    data: notifications = [],
+    isLoading,
+    isError,
+    error,
+  } = useQuery({
+    queryKey: ["notifications"],
+    queryFn: getAllNotifications,
+    staleTime: 1000 * 60 * 30,
+  });
+
+  if (isLoading) {
+    // Skeleton placeholders to match notification card layout
+    const placeholders = Array.from({ length: 4 });
+    return (
+      <div className="w-full mx-auto p-4 space-y-6" aria-busy="true">
+        {placeholders.map((_, i) => (
+          <div
+            key={i}
+            className="flex items-start gap-4 bg-white shadow-md p-4 rounded-lg"
+          >
+            <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse" />
+            <div className="flex-1 space-y-2 py-1">
+              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/3 animate-pulse" />
+              <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/4 animate-pulse" />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (isError) {
+    return <div className="p-4 text-red-600">Error: {error?.message}</div>;
+  }
+
   return (
-    <div className="w-full mx-auto p-4 space-y-6 h-screen overflow-y-auto">
-      {Object.entries(notificationsData).map(([section, items]) => (
-        <div key={section}>
-          <h2 className="text-[21px] font-bold text-black/60">{section}</h2>
-          <div className="flex flex-col gap-3 mt-2">
-            {items.map((item) => (
-              <div
-                key={item.id}
-                className="flex items-start gap-4 bg-white shadow-md p-4 rounded-lg"
-              >
-                <img
-                  src={item.avatar}
-                  alt={item.name}
-                  className="w-10 h-10 rounded-full object-cover"
-                />
-                <div>
-                  <p className="text-[16px] text-[#333]">
-                    <span className="font-semibold">{item.name}</span> {item.action}
-                  </p>
-                  <p className="text-sm text-[#666C7E]">{item.time}</p>
-                </div>
-              </div>
-            ))}
+    <div className="w-full mx-auto p-4 space-y-6">
+      {notifications.length === 0 && (
+        <div className="text-sm text-[#666C7E]">No notifications</div>
+      )}
+
+      {notifications.map((n) => (
+        <div
+          key={n._id || n.Notifications_id}
+          className="flex items-start gap-4 bg-white shadow-md p-4 rounded-lg"
+        >
+          <img
+            src={profileImg}
+            alt={n?.CreateBy?.Name || "User"}
+            className="w-10 h-10 rounded-full object-cover"
+          />
+          <div>
+            <p className="text-[16px] text-[#333]">
+              <span className="font-semibold">{n?.CreateBy?.Name || ""}</span>{" "}
+              {n?.Notifications}
+            </p>
+            <p className="text-sm text-[#666C7E]">{formatTime(n?.CreateAt)}</p>
           </div>
         </div>
       ))}
@@ -101,4 +78,5 @@ const Notifications = () => {
   );
 };
 
-export default withAdminLayout(Notifications);
+const WrappedNotifications = withAdminLayout(Notifications);
+export default WrappedNotifications;
