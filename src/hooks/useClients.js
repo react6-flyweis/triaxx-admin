@@ -26,3 +26,22 @@ export function useCreateClient(options = {}) {
     ...rest,
   });
 }
+
+// Hook to fetch a single client by id
+export function useClient(clientId, options = {}) {
+  const { onSuccess, onError, ...rest } = options;
+
+  return useQuery({
+    queryKey: ["client", clientId],
+    queryFn: () => clientsService.getClientById(clientId),
+    enabled: Boolean(clientId),
+    staleTime: 1000 * 60 * 1,
+    retry: 1,
+    refetchOnWindowFocus: false,
+    onSuccess: (data, variables, context) => {
+      if (onSuccess) onSuccess(data, variables, context);
+    },
+    onError,
+    ...rest,
+  });
+}

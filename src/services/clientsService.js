@@ -32,4 +32,15 @@ export const clientsService = {
       handleAxiosError(err);
     }
   },
+
+  // Get client by id
+  getClientById: async (id) => {
+    try {
+      const res = await api.get(`${PATH}/getbyid/${id}`);
+      return res.data;
+    } catch (err) {
+      console.error(`Error fetching client by id ${id}:`, err);
+      handleAxiosError(err);
+    }
+  },
 };
