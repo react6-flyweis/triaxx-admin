@@ -4,6 +4,7 @@ import logo from "../../assets/Images/Home/logo.png";
 import Gradient from "../../assets/Images/Home/Gradient.png";
 import { useNavigate } from "react-router-dom";
 import useLogin from "../../hooks/useAuth";
+import { extractErrorMessage } from "@/utils/error";
 
 export default function SignInPage() {
   const navigate = useNavigate();
@@ -18,7 +19,9 @@ export default function SignInPage() {
       navigate("/Dashboard", { replace: true });
     },
     onError: (err) => {
-      setError(err?.message || "Login failed. Please check your credentials.");
+      setError(
+        extractErrorMessage(err, "Login failed. Please check your credentials.")
+      );
     },
   });
 
