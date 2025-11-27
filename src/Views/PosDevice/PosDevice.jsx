@@ -3,6 +3,7 @@ import { Plus, Edit, RefreshCw } from "lucide-react";
 import withAdminLayout from "../AdminPanel/withAdminLayout";
 import { usePosOrders } from "../../hooks/usePosOrders";
 import OrderFormDialog from "../../Components/PosDevice/OrderFormDialog";
+import { extractErrorMessage } from "@/utils/error";
 
 import printer from "../../assets/Images/admin/Pos/printer.png";
 import system from "../../assets/Images/admin/Pos/system.png";
@@ -62,7 +63,7 @@ const PosDevice = () => {
     refetch,
   } = usePosOrders({
     onError: (err) => {
-      setError(err.message || "Failed to fetch orders");
+      setError(extractErrorMessage(err, "Failed to fetch orders"));
     },
   });
 
@@ -107,7 +108,7 @@ const PosDevice = () => {
       {(error || fetchError) && (
         <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
           <p className="font-semibold">Error:</p>
-          <p>{error || (fetchErrorObj && fetchErrorObj.message)}</p>
+          <p>{error || extractErrorMessage(fetchErrorObj, "")}</p>
           {error.includes("Authentication") && (
             <p className="mt-2 text-sm">Redirecting to login...</p>
           )}
