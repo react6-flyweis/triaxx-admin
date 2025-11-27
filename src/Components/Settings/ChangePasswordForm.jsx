@@ -1,22 +1,41 @@
-import React, { useState } from 'react';
-import withAdminLayout from '../../Views/AdminPanel/withAdminLayout';
-import arrow from '../../assets/Images/Home/arrow.png';
-import { Eye, EyeOff } from 'lucide-react';
-import PasswordResetModal from './PasswordResetModal';
-import ChangePasswordSuccessPopupModal from './ChangePasswordSuccessPopupModal';
+import React, { useState } from "react";
+import withAdminLayout from "../../Views/AdminPanel/withAdminLayout";
+import arrow from "../../assets/Images/Home/arrow.png";
+import { Eye, EyeOff } from "lucide-react";
+import PasswordResetModal from "./PasswordResetModal";
+import SuccessDialog from "@/Components/ui/SuccessDialog";
+import { useChangePassword } from "../../hooks/useChangePassword";
+import { extractErrorMessage } from "@/utils/error";
 
 const ChangePasswordForm = () => {
   const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [showModal, setShowModal] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [successOpen, setSuccessOpen] = useState(false);
+  const [formError, setFormError] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
+
+  const changePasswordMutation = useChangePassword({
+    onSuccess: () => {
+      // clear fields and show success dialog
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setFormError("");
+      setSuccessOpen(true);
+    },
+    onError: (err) => {
+      const msg = extractErrorMessage(err, "Failed to change password");
+      setFormError(msg);
+    },
+  });
 
   return (
     <div className="px-4 py-6 md:px-10 md:py-10 w-full max-w-5xl mx-auto">
@@ -42,9 +61,13 @@ const ChangePasswordForm = () => {
                 Enter Current Password
               </label>
               <div className="relative w-full h-12 md:h-14 bg-gradient-to-b from-[rgba(106,27,154,0.1)] to-[rgba(211,47,47,0.1)] rounded-lg">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm md:text-base text-black">
-                  ***************
-                </span>
+                <input
+                  type={showCurrent ? "text" : "password"}
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  className="w-full h-full bg-transparent px-4 outline-none text-black text-sm md:text-base"
+                  placeholder="Enter current password"
+                />
                 <div
                   className="absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer"
                   onClick={() => setShowCurrent(!showCurrent)}
@@ -74,7 +97,7 @@ const ChangePasswordForm = () => {
               </label>
               <div className="relative w-full h-12 md:h-14 bg-gradient-to-b from-[rgba(106,27,154,0.1)] to-[rgba(211,47,47,0.1)] rounded-lg">
                 <input
-                  type={showNew ? 'text' : 'password'}
+                  type={showNew ? "text" : "password"}
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   className="w-full h-full bg-transparent px-4 outline-none text-black text-sm md:text-base"
@@ -96,7 +119,7 @@ const ChangePasswordForm = () => {
               </label>
               <div className="relative w-full h-12 md:h-14 bg-gradient-to-b from-[rgba(106,27,154,0.1)] to-[rgba(211,47,47,0.1)] rounded-lg">
                 <input
-                  type={showConfirm ? 'text' : 'password'}
+                  type={showConfirm ? "text" : "password"}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   className="w-full h-full bg-transparent px-4 outline-none text-black text-sm md:text-base"
@@ -115,24 +138,62 @@ const ChangePasswordForm = () => {
           {/* Save Password Button */}
           <div className="flex justify-center">
             <button
-              onClick={() => setShowModal(true)}
-              className="bg-gradient-to-b from-[#6A1B9A] to-[#D32F2F] text-white font-medium text-base md:text-lg py-3 px-6 md:px-10 rounded-xl w-full md:w-auto"
+              onClick={async () => {
+                setFormError("");
+                if (!currentPassword || !newPassword || !confirmPassword) {
+                  setFormError("Please fill out all fields");
+                  return;
+                }
+                if (newPassword !== confirmPassword) {
+                  setFormError("Passwords do not match");
+                  return;
+                }
+
+                try {
+                  await changePasswordMutation.mutateAsync({
+                    currentPassword: currentPassword,
+                    newPassword: newPassword,
+                  });
+                } catch (error) {
+                  // onError already handled by hook options — still log for debugging
+                  console.error("change password error", error);
+                }
+              }}
+              disabled={changePasswordMutation.isLoading}
+              className={`bg-gradient-to-b from-[#6A1B9A] to-[#D32F2F] text-white font-medium text-base md:text-lg py-3 px-6 md:px-10 rounded-xl w-full md:w-auto ${
+                changePasswordMutation.isLoading
+                  ? "opacity-60 pointer-events-none"
+                  : ""
+              }`}
             >
-              Save Password
+              {changePasswordMutation.isLoading ? "Saving..." : "Save Password"}
             </button>
           </div>
+          {formError && (
+            <p className="text-sm text-red-600 mt-2 text-center">{formError}</p>
+          )}
         </div>
       </div>
 
       {/* Modals */}
-      {isModalOpen && <PasswordResetModal onClose={closeModal} />}
-      {showModal && (
-        <ChangePasswordSuccessPopupModal
-          onClose={() => setShowModal(false)}
-        />
-      )}
+      <PasswordResetModal
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        onClose={closeModal}
+      />
+      <SuccessDialog
+        open={successOpen}
+        onOpenChange={setSuccessOpen}
+        title="Password Changed"
+        subtitle="Your password has been changed successfully."
+        ctaText="Continue"
+      />
     </div>
   );
 };
 
-export default withAdminLayout(ChangePasswordForm);
+ChangePasswordForm.displayName = "ChangePasswordForm";
+const WrappedChangePasswordForm = withAdminLayout(ChangePasswordForm);
+WrappedChangePasswordForm.displayName = "WrappedChangePasswordForm";
+
+export default WrappedChangePasswordForm;

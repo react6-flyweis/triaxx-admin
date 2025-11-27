@@ -1,6 +1,6 @@
-import React from 'react';
-import successIcon from '../../assets/Images/admin/client/successIcon.png';
-import { useNavigate } from 'react-router-dom';
+import React from "react";
+import successIcon from "../../assets/Images/admin/client/successIcon.png";
+import { useNavigate } from "react-router-dom";
 
 const ChangePasswordSuccessPopupModal = ({ onClose }) => {
   const navigate = useNavigate();
@@ -8,7 +8,7 @@ const ChangePasswordSuccessPopupModal = ({ onClose }) => {
   const handleContinue = () => {
     onClose(); // Close the modal
     setTimeout(() => {
-      navigate('/settings'); // Navigate after a short delay
+      navigate("/settings"); // Navigate after a short delay
     }, 200); // Adjust delay as needed
   };
 
