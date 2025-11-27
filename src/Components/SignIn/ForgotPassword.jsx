@@ -1,50 +1,38 @@
-import React, { useState } from 'react';
-import logo from '../../assets/Images/Home/logo.png';
-import Gradient from '../../assets/Images/Home/Gradient.png';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from "react";
+import { useRequestPasswordReset } from "@/hooks/useForgotPassword";
+import { extractErrorMessage } from "@/utils/error";
+import logo from "../../assets/Images/Home/logo.png";
+import Gradient from "../../assets/Images/Home/Gradient.png";
+import { useNavigate } from "react-router-dom";
 
 export default function ForgotPassword() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState("");
   const [otpStage, setOtpStage] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  const requestReset = useRequestPasswordReset();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!email.trim()) {
-      setError('Please enter your email.');
+      setError("Please enter your email.");
       return;
     }
 
     setLoading(true);
-    setError('');
-    setSuccess('');
-
+    setError("");
+    setSuccess("");
     try {
-      const response = await fetch(
-        'https://vercel-mr-clement-pos-backend.vercel.app/api/user/forget-password/send-otp',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            // No Authorization header — not required for sending OTP
-          },
-          body: JSON.stringify({ email: email.trim() }),
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to send OTP. Please try again.');
-      }
-
-      setSuccess('OTP sent successfully! Check your email.');
+      await requestReset.mutateAsync({ email: email.trim() });
+      setSuccess("OTP sent successfully! Check your email.");
       setOtpStage(true);
     } catch (err) {
-      setError(err.message || 'Something went wrong. Please try again.');
+      setError(
+        extractErrorMessage(err, "Failed to send OTP. Please try again.")
+      );
     } finally {
       setLoading(false);
     }
@@ -52,7 +40,7 @@ export default function ForgotPassword() {
 
   const handleVerifyOTP = () => {
     // Navigate to OTP verification page
-    navigate('/verify-otp', { state: { email } });
+    navigate("/verify-otp", { state: { email } });
   };
 
   return (
@@ -74,10 +62,10 @@ export default function ForgotPassword() {
           className="hidden lg:flex flex-1 flex-col justify-center px-8 lg:px-32"
           style={{
             backgroundImage: `url(${Gradient})`,
-            backgroundSize: 'cover',
-            backgroundRepeat: 'no-repeat',
-            backgroundPosition: 'center',
-            backgroundBlendMode: 'overlay',
+            backgroundSize: "cover",
+            backgroundRepeat: "no-repeat",
+            backgroundPosition: "center",
+            backgroundBlendMode: "overlay",
           }}
         >
           <div className="max-w-2xl">
@@ -85,12 +73,17 @@ export default function ForgotPassword() {
               POS that works as hard as you. and Faster than you.
             </h1>
             <p className="text-gray-600 text-lg lg:text-xl mb-12 leading-relaxed max-w-xl">
-              Grow without limit with Triaxx and make timely and accurate decisions with real-time reports.
+              Grow without limit with Triaxx and make timely and accurate
+              decisions with real-time reports.
             </p>
             <div className="flex items-center gap-4 bg-white rounded-xl px-8 py-5 shadow-lg w-[208px] h-[58.8px]">
               <div className="flex items-center gap-3 justify-between">
                 <span className="font-medium text-xl">English</span>
-                <img src="https://flagcdn.com/us.svg" alt="USA Flag" className="w-8 h-5 rounded-sm shadow-sm object-cover" />
+                <img
+                  src="https://flagcdn.com/us.svg"
+                  alt="USA Flag"
+                  className="w-8 h-5 rounded-sm shadow-sm object-cover"
+                />
               </div>
             </div>
           </div>
@@ -100,17 +93,26 @@ export default function ForgotPassword() {
         <div className="w-full lg:max-w-2xl bg-white shadow-xl overflow-y-auto px-4 sm:px-8 py-10 sm:py-16 min-h-screen lg:min-h-full flex items-center">
           <div className="max-w-lg mx-auto w-full">
             <div className="flex items-center justify-between mb-8">
-              <h1 className="text-3xl sm:text-4xl font-bold text-black mb-3">Sign in</h1>
-              <img src={logo} alt="Company Logo" className="h-9 w-[150px] sm:w-[210px]" />
+              <h1 className="text-3xl sm:text-4xl font-bold text-black mb-3">
+                Sign in
+              </h1>
+              <img
+                src={logo}
+                alt="Company Logo"
+                className="h-9 w-[150px] sm:w-[210px]"
+              />
             </div>
 
             {!otpStage ? (
               <>
                 {/* Forgot Password Form */}
                 <div className="text-center mb-8">
-                  <h1 className="text-3xl sm:text-4xl font-bold text-black mb-3">Forgot Password</h1>
+                  <h1 className="text-3xl sm:text-4xl font-bold text-black mb-3">
+                    Forgot Password
+                  </h1>
                   <p className="text-gray-600 text-base sm:text-lg max-w-sm mx-auto">
-                    We will send you instructions to reset your password in your registered email.
+                    We will send you instructions to reset your password in your
+                    registered email.
                   </p>
                 </div>
 
@@ -128,7 +130,9 @@ export default function ForgotPassword() {
 
                 <form className="space-y-6" onSubmit={handleSubmit}>
                   <div>
-                    <label className="block text-base sm:text-xl font-medium text-black mb-3">Email Address</label>
+                    <label className="block text-base sm:text-xl font-medium text-black mb-3">
+                      Email Address
+                    </label>
                     <input
                       type="email"
                       value={email}
@@ -144,23 +148,40 @@ export default function ForgotPassword() {
                       type="submit"
                       disabled={loading}
                       className={`w-full bg-gradient-to-b from-purple-700 to-red-600 text-white font-medium text-lg sm:text-xl py-4 rounded-xl hover:shadow-lg transition-shadow flex items-center justify-center ${
-                        loading ? 'opacity-70 cursor-not-allowed' : ''
+                        loading ? "opacity-70 cursor-not-allowed" : ""
                       }`}
                     >
                       {loading ? (
-                        <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+                        <svg
+                          className="animate-spin h-5 w-5 text-white"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          ></circle>
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8v8z"
+                          ></path>
                         </svg>
                       ) : (
-                        'Reset Password'
+                        "Reset Password"
                       )}
                     </button>
 
                     <div
                       className="w-full mt-4 rounded-xl p-[2px]"
                       style={{
-                        background: 'linear-gradient(180deg, #6A1B9A 0%, #D32F2F 100%)',
+                        background:
+                          "linear-gradient(180deg, #6A1B9A 0%, #D32F2F 100%)",
                       }}
                     >
                       <button
@@ -179,11 +200,15 @@ export default function ForgotPassword() {
               <>
                 {/* OTP Sent Confirmation */}
                 <div className="text-center mb-12">
-                  <h1 className="text-3xl sm:text-4xl font-bold text-black mb-3">Check Your Email</h1>
+                  <h1 className="text-3xl sm:text-4xl font-bold text-black mb-3">
+                    Check Your Email
+                  </h1>
                   <p className="text-gray-600 text-base sm:text-lg">
                     An authentication code has been sent to:
                   </p>
-                  <p className="text-black font-semibold text-base sm:text-lg mt-2 break-all">{email}</p>
+                  <p className="text-black font-semibold text-base sm:text-lg mt-2 break-all">
+                    {email}
+                  </p>
                 </div>
 
                 <div className="space-y-6">
@@ -197,14 +222,15 @@ export default function ForgotPassword() {
                   <div
                     className="w-full mt-4 rounded-xl p-[2px]"
                     style={{
-                      background: 'linear-gradient(180deg, #6A1B9A 0%, #D32F2F 100%)',
+                      background:
+                        "linear-gradient(180deg, #6A1B9A 0%, #D32F2F 100%)",
                     }}
                   >
                     <button
                       type="button"
                       onClick={() => {
                         setOtpStage(false);
-                        setSuccess('');
+                        setSuccess("");
                       }}
                       className="w-full text-gray-700 font-medium text-lg sm:text-xl py-4 bg-white rounded-[10px]"
                     >
