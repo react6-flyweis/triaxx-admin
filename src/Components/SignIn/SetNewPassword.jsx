@@ -1,22 +1,39 @@
-import React, { useState } from 'react';
-import { Eye, EyeOff } from 'lucide-react';
-import logo from '../../assets/Images/Home/logo.png';
-import Gradient from '../../assets/Images/Home/Gradient.png';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
+import logo from "../../assets/Images/Home/logo.png";
+import Gradient from "../../assets/Images/Home/Gradient.png";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useResetPassword } from "@/hooks/useForgotPassword";
+import { extractErrorMessage } from "@/utils/error";
 
 export default function SetNewPassword() {
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const { email, otp } = location.state || {};
+  const [error, setError] = useState("");
+  const resetMutation = useResetPassword();
 
-  const handleCreate = (e) => {
+  const handleCreate = async (e) => {
     e.preventDefault();
-    if (!password || !confirmPassword) return alert('Please fill both fields.');
-    if (password !== confirmPassword) return alert('Passwords do not match.');
-    alert('Password reset successfully!');
-    navigate('/password-success');
+    setError("");
+    if (!password || !confirmPassword)
+      return setError("Please fill both fields.");
+    if (password !== confirmPassword)
+      return setError("Passwords do not match.");
+    if (!email || !otp)
+      return setError(
+        "Missing email or OTP; please start the reset flow again."
+      );
+    try {
+      await resetMutation.mutateAsync({ email, otp, newPassword: password });
+      navigate("/password-success");
+    } catch (err) {
+      setError(extractErrorMessage(err, "Failed to reset password"));
+    }
   };
 
   return (
@@ -29,10 +46,10 @@ export default function SetNewPassword() {
           className="hidden lg:flex flex-1 flex-col justify-center px-8 lg:px-32"
           style={{
             backgroundImage: `url(${Gradient})`,
-            backgroundSize: 'cover',
-            backgroundRepeat: 'no-repeat',
-            backgroundPosition: 'center',
-            backgroundBlendMode: 'overlay',
+            backgroundSize: "cover",
+            backgroundRepeat: "no-repeat",
+            backgroundPosition: "center",
+            backgroundBlendMode: "overlay",
           }}
         >
           <div className="max-w-2xl">
@@ -40,12 +57,17 @@ export default function SetNewPassword() {
               POS that works as hard as you. and Faster than you.
             </h1>
             <p className="text-gray-600 text-lg lg:text-xl mb-12 leading-relaxed max-w-xl">
-              Grow without limit with Triaxx and make timely and accurate decisions with real-time reports.
+              Grow without limit with Triaxx and make timely and accurate
+              decisions with real-time reports.
             </p>
             <div className="flex items-center gap-4 bg-white rounded-xl px-8 py-5 shadow-lg w-[208px] h-[58.8px]">
               <div className="flex items-center gap-3 justify-between">
                 <span className="font-medium text-xl">English</span>
-                <img src="https://flagcdn.com/us.svg" alt="USA Flag" className="w-8 h-5 rounded-sm shadow-sm object-cover" />
+                <img
+                  src="https://flagcdn.com/us.svg"
+                  alt="USA Flag"
+                  className="w-8 h-5 rounded-sm shadow-sm object-cover"
+                />
               </div>
             </div>
           </div>
@@ -56,15 +78,24 @@ export default function SetNewPassword() {
           <div className="max-w-lg mx-auto w-full">
             {/* Header */}
             <div className="flex items-center justify-between mb-8">
-              <h1 className="text-3xl sm:text-4xl font-bold text-black mb-3">Sign in</h1>
-              <img src={logo} alt="Triaxx Logo" className="h-9 w-[150px] sm:w-[210px]" />
+              <h1 className="text-3xl sm:text-4xl font-bold text-black mb-3">
+                Sign in
+              </h1>
+              <img
+                src={logo}
+                alt="Triaxx Logo"
+                className="h-9 w-[150px] sm:w-[210px]"
+              />
             </div>
 
             {/* Title */}
             <div className="text-center mb-10 max-w-md mx-auto">
-              <h2 className="text-2xl sm:text-3xl font-bold text-black mb-2">Set a New Password</h2>
+              <h2 className="text-2xl sm:text-3xl font-bold text-black mb-2">
+                Set a New Password
+              </h2>
               <p className="text-gray-500 text-sm sm:text-base">
-                Your previous password has been reset. Please set a new password for your account.
+                Your previous password has been reset. Please set a new password
+                for your account.
               </p>
             </div>
 
@@ -72,9 +103,11 @@ export default function SetNewPassword() {
             <form onSubmit={handleCreate} className="space-y-6">
               {/* Password Field */}
               <div className="relative">
-                <label className="block text-sm sm:text-base font-medium text-black mb-2">Create New Password</label>
+                <label className="block text-sm sm:text-base font-medium text-black mb-2">
+                  Create New Password
+                </label>
                 <input
-                  type={showPassword ? 'text' : 'password'}
+                  type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter new password"
@@ -90,9 +123,11 @@ export default function SetNewPassword() {
 
               {/* Confirm Password Field */}
               <div className="relative">
-                <label className="block text-sm sm:text-base font-medium text-black mb-2">Re-type Password</label>
+                <label className="block text-sm sm:text-base font-medium text-black mb-2">
+                  Re-type Password
+                </label>
                 <input
-                  type={showConfirm ? 'text' : 'password'}
+                  type={showConfirm ? "text" : "password"}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Re-type new password"
@@ -109,9 +144,12 @@ export default function SetNewPassword() {
               {/* Submit Button */}
               <button
                 type="submit"
-                className="w-full py-4 rounded-xl bg-gradient-to-r from-purple-700 via-pink-600 to-red-600 text-white font-semibold text-base sm:text-lg hover:shadow-lg transition-shadow"
+                disabled={resetMutation.isLoading}
+                className={`w-full py-4 rounded-xl bg-gradient-to-r from-purple-700 via-pink-600 to-red-600 text-white font-semibold text-base sm:text-lg hover:shadow-lg transition-shadow ${
+                  resetMutation.isLoading ? "opacity-70 cursor-not-allowed" : ""
+                }`}
               >
-                Create
+                {resetMutation.isLoading ? "Saving..." : "Create"}
               </button>
             </form>
           </div>
