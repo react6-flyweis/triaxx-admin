@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import withAdminLayout from "../../Views/AdminPanel/withAdminLayout";
 import { useClient } from "../../hooks/useClients";
+import Loading from "../ui/Loading";
 import Restaurant from "../../assets/Images/admin/client/Restaurant.png";
 import Lock from "../../assets/Images/admin/client/Lock.png";
 import uil_message from "../../assets/Images/admin/client/uil_message.png";
@@ -9,13 +10,15 @@ import Icon from "../../assets/Images/admin/client/Icon.png";
 import arrow from "../../assets/Images/Home/arrow.png";
 import Performance from "./Performance";
 import RenewalPopupModal from "./RenewalPopupModal";
+import EmployeeCard from "./EmployeeCard";
 
 const ClientDetails = () => {
   const [activeTab, setActiveTab] = useState("about");
   const [showModal, setShowModal] = useState(false);
   const { id } = useParams();
-  const { data: clientRes } = useClient(id);
+  const { data: clientRes, error, isError, isLoading } = useClient(id);
   const client = clientRes?.data || null;
+  const navigate = useNavigate();
 
   const yearsSince = (iso) => {
     if (!iso) return "1 Year";
@@ -23,6 +26,62 @@ const ClientDetails = () => {
     const years = Math.floor(diff / (1000 * 60 * 60 * 24 * 365));
     return `${years > 0 ? years : 1} Year${years === 1 ? "" : "s"}`;
   };
+
+  // Handle basic loading and error states early
+  if (isLoading) return <Loading />;
+
+  if (isError) {
+    const status = error?.status || error?.response?.status || null;
+
+    if (status === 404) {
+      return (
+        <div className="w-full px-4 sm:px-6 lg:px-10 py-8 text-black text-center">
+          <h1 className="text-2xl font-bold mb-2">Client Not Found</h1>
+          <p className="text-sm text-gray-600 mb-6">
+            We couldn't find a client with ID:{" "}
+            <span className="font-semibold">{id}</span>.
+          </p>
+          <div className="flex items-center justify-center gap-4">
+            <Link
+              to="/clients"
+              className="px-6 py-3 bg-linear-to-b from-[#6A1B9A] to-[#D32F2F] text-white rounded-xl font-semibold"
+            >
+              Back to Clients
+            </Link>
+            <button
+              onClick={() => navigate(-1)}
+              className="px-6 py-3 border border-gray-300 rounded-xl text-gray-700 bg-white"
+            >
+              Go Back
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="w-full px-4 sm:px-6 lg:px-10 py-8 text-black text-center">
+        <h1 className="text-2xl font-bold mb-2">Error loading client</h1>
+        <p className="text-sm text-gray-600 mb-6">
+          {error?.message || "Unexpected error"}
+        </p>
+        <div className="flex items-center justify-center gap-4">
+          <button
+            onClick={() => navigate(-1)}
+            className="px-6 py-3 border border-gray-300 rounded-xl text-gray-700 bg-white"
+          >
+            Go Back
+          </button>
+          <Link
+            to="/clients"
+            className="px-6 py-3 bg-linear-to-b from-[#6A1B9A] to-[#D32F2F] text-white rounded-xl font-semibold"
+          >
+            Back to Clients
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full px-4 sm:px-6 lg:px-10 py-4 sm:py-6 lg:py-8 text-black">
@@ -199,14 +258,17 @@ const ClientDetails = () => {
               <h2 className="text-xl sm:text-2xl font-bold mb-2 sm:mb-0">
                 Employee Details
               </h2>
-              <div className="flex items-center gap-2 text-base sm:text-[18px] font-medium cursor-pointer poppins-text">
+              <Link
+                to={`/client-details/${id}/employees`}
+                className="flex items-center gap-2 text-base sm:text-[18px] font-medium cursor-pointer poppins-text"
+              >
                 <span>View more</span>
                 <img
                   src={Icon}
                   alt="Icon"
                   className="w-4 h-4 sm:w-auto sm:h-auto"
                 />
-              </div>
+              </Link>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 sm:gap-12 mt-6 sm:mt-8">
@@ -216,20 +278,28 @@ const ClientDetails = () => {
                 ["Cashiers", 5, 149],
                 ["Kitchen Staff", 20, 227],
               ].map(([role, count, barWidth], i) => (
-                <div key={i} className="w-full">
-                  <div className="flex justify-between items-center text-lg sm:text-[20px] font-semibold">
-                    <p>{role}</p>
-                    <p className="text-base sm:text-[18px] font-medium">
-                      {count}
-                    </p>
+                <Link
+                  key={i}
+                  to={`/client-details/${id}/employees/${role
+                    ?.toLowerCase()
+                    ?.replace(/\s+/g, "-")}`}
+                  className="no-underline"
+                >
+                  <div className="w-full">
+                    <div className="flex justify-between items-center text-lg sm:text-[20px] font-semibold">
+                      <p>{role}</p>
+                      <p className="text-base sm:text-[18px] font-medium">
+                        {count}
+                      </p>
+                    </div>
+                    <div className="w-full h-1.5 bg-gray-300 mt-2 rounded-full relative">
+                      <div
+                        className="h-1.5 bg-linear-to-b from-[#6A1B9A] to-[#D32F2F] rounded-full"
+                        style={{ width: `${(barWidth / 435) * 100}%` }}
+                      />
+                    </div>
                   </div>
-                  <div className="w-full h-1.5 bg-gray-300 mt-2 rounded-full relative">
-                    <div
-                      className="h-1.5 bg-linear-to-b from-[#6A1B9A] to-[#D32F2F] rounded-full"
-                      style={{ width: `${(barWidth / 435) * 100}%` }}
-                    />
-                  </div>
-                </div>
+                </Link>
               ))}
             </div>
           </div>
