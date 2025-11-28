@@ -28,6 +28,13 @@ const CreateClientForm = lazy(() =>
 const ClientDetails = lazy(() =>
   import("../../Components/Clients/ClientDetails")
 );
+const ClientEmployees = lazy(() => import("../../Components/Clients/Employee"));
+const EmployeesList = lazy(() =>
+  import("../../Components/Clients/EmployeesList")
+);
+const EmployeeDetails = lazy(() =>
+  import("../../Components/Clients/EmployeeDetails")
+);
 const SubscriptionManagement = lazy(() =>
   import("../../Components/Clients/SubscriptionManagement")
 );
@@ -95,6 +102,15 @@ const AppRoutes = () => {
           <Route path="/clients" element={<Clients />} />
           <Route path="/create-clients" element={<CreateClientForm />} />
           <Route path="/client-details/:id" element={<ClientDetails />} />
+          <Route
+            path="/client-details/:id/employees"
+            element={<ClientEmployees />}
+          />
+          <Route path="/client-details/:id/:role" element={<EmployeesList />} />
+          <Route
+            path="/client-details/:id/:role/:employeeId"
+            element={<EmployeeDetails />}
+          />
           <Route
             path="/renew-management"
             element={<SubscriptionManagement />}
