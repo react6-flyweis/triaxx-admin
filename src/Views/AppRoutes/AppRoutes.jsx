@@ -119,7 +119,7 @@ const AppRoutes = () => {
           <Route path="/report" element={<Report />} />
           <Route path="/audit-log" element={<AuditLogTable />} />
           <Route path="/supports" element={<SupportsPage />} />
-          <Route path="/ticket-details" element={<TicketDetails />} />
+          <Route path="/ticket-details/:id" element={<TicketDetails />} />
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/pos-device" element={<PosDevice />} />
           <Route
