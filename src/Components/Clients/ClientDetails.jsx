@@ -258,55 +258,103 @@ const ClientDetails = () => {
               <h2 className="text-xl sm:text-2xl font-bold mb-2 sm:mb-0">
                 Employee Details
               </h2>
-              <Link
-                to={`/client-details/${id}/employees`}
-                className="flex items-center gap-2 text-base sm:text-[18px] font-medium cursor-pointer poppins-text"
-              >
-                <span>View more</span>
-                <img
-                  src={Icon}
-                  alt="Icon"
-                  className="w-4 h-4 sm:w-auto sm:h-auto"
-                />
-              </Link>
+              {(() => {
+                // determine if there are any employees available
+                const employeeCountByRole = client?.EmployeeCountByRole || [];
+                const clientEmployees = client?.Employee || [];
+
+                // sum counts from EmployeeCountByRole if provided, otherwise fallback to actual employee array length
+                const totalFromRoles = employeeCountByRole.reduce(
+                  (acc, r) => acc + (r.count || 0),
+                  0
+                );
+                const totalEmployees = Math.max(
+                  totalFromRoles,
+                  clientEmployees.length || 0
+                );
+                const hasEmployees = totalEmployees > 0;
+
+                if (!hasEmployees) {
+                  return (
+                    <div className="flex items-center gap-2 text-base sm:text-[18px] font-medium poppins-text text-gray-400 cursor-not-allowed opacity-60">
+                      <span>View more</span>
+                      <img
+                        src={Icon}
+                        alt="Icon"
+                        className="w-4 h-4 sm:w-auto sm:h-auto"
+                      />
+                    </div>
+                  );
+                }
+
+                return (
+                  <Link
+                    to={`/client-details/${id}/employees`}
+                    className="flex items-center gap-2 text-base sm:text-[18px] font-medium cursor-pointer poppins-text"
+                  >
+                    <span>View more</span>
+                    <img
+                      src={Icon}
+                      alt="Icon"
+                      className="w-4 h-4 sm:w-auto sm:h-auto"
+                    />
+                  </Link>
+                );
+              })()}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 sm:gap-12 mt-6 sm:mt-8">
-              {[
-                ["Managers", 10, 210],
-                ["Waiters", 100, 381],
-                ["Cashiers", 5, 149],
-                ["Kitchen Staff", 20, 227],
-              ].map(([role, count, barWidth], i) => (
-                <Link
-                  key={i}
-                  to={`/client-details/${id}/employees/${role
-                    ?.toLowerCase()
-                    ?.replace(/\s+/g, "-")}`}
-                  className="no-underline"
-                >
-                  <div className="w-full">
-                    <div className="flex justify-between items-center text-lg sm:text-[20px] font-semibold">
-                      <p>{role}</p>
-                      <p className="text-base sm:text-[18px] font-medium">
-                        {count}
-                      </p>
-                    </div>
-                    <div className="w-full h-1.5 bg-gray-300 mt-2 rounded-full relative">
-                      <div
-                        className="h-1.5 bg-linear-to-b from-[#6A1B9A] to-[#D32F2F] rounded-full"
-                        style={{ width: `${(barWidth / 435) * 100}%` }}
-                      />
-                    </div>
-                  </div>
-                </Link>
-              ))}
+              {client?.EmployeeCountByRole &&
+              client.EmployeeCountByRole.length > 0 ? (
+                (() => {
+                  // compute max count to render relative widths
+                  const counts = client.EmployeeCountByRole.map(
+                    (r) => r.count || 0
+                  );
+                  const maxCount = Math.max(...counts, 1);
+
+                  return client.EmployeeCountByRole.map((r, i) => {
+                    const roleName =
+                      r.role_name || r.Role_name || r.roleName || "Role";
+                    const count = r.count || 0;
+                    const widthPercent = Math.round((count / maxCount) * 100);
+                    return (
+                      <Link
+                        key={i}
+                        to={`/client-details/${id}/employees/${roleName
+                          .toLowerCase()
+                          .replace(/\s+/g, "-")}`}
+                        className="no-underline"
+                      >
+                        <div className="w-full">
+                          <div className="flex justify-between items-center text-lg sm:text-[20px] font-semibold">
+                            <p>{roleName}</p>
+                            <p className="text-base sm:text-[18px] font-medium">
+                              {count}
+                            </p>
+                          </div>
+                          <div className="w-full h-1.5 bg-gray-300 mt-2 rounded-full relative">
+                            <div
+                              className="h-1.5 bg-linear-to-b from-[#6A1B9A] to-[#D32F2F] rounded-full"
+                              style={{ width: `${widthPercent}%` }}
+                            />
+                          </div>
+                        </div>
+                      </Link>
+                    );
+                  });
+                })()
+              ) : (
+                <div className="text-sm text-gray-600">
+                  No employee data available.
+                </div>
+              )}
             </div>
           </div>
         </>
       )}
 
-      {activeTab === "performance" && <Performance />}
+      {activeTab === "performance" && <Performance clientId={id} />}
 
       {showModal && <RenewalPopupModal onClose={() => setShowModal(false)} />}
     </div>
