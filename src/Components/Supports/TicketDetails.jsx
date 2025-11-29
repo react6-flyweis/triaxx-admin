@@ -1,67 +1,101 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 import withAdminLayout from "../../Views/AdminPanel/withAdminLayout";
-import { ChevronDownIcon } from "@heroicons/react/20/solid";
-import { BsEnvelopeOpen, BsCheckCircle } from "react-icons/bs";
+import {
+  useTicket,
+  useTicketReplies,
+  useCreateReply,
+} from "../../hooks/useSupports";
 import SuccessDialog from "@/Components/ui/SuccessDialog";
 
-const StatusDropdown = ({ status, setStatus }) => {
-  const [isOpen, setIsOpen] = useState(false);
-
-  const statusOptions = ["New", "On-Going", "Resolved"];
-
-  const statusColors = {
-    New: "bg-blue-500 text-white",
-    "On-Going": "bg-yellow-500 text-white",
-    Resolved: "bg-green-500 text-white",
-  };
-
-  const statusIcons = {
-    New: <BsEnvelopeOpen className="w-3 h-3 sm:w-4 sm:h-4" />,
-    "On-Going": <BsEnvelopeOpen className="w-3 h-3 sm:w-4 sm:h-4" />,
-    Resolved: <BsCheckCircle className="w-3 h-3 sm:w-4 sm:h-4" />,
-  };
-
-  return (
-    <div className="relative inline-block text-left">
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className={`inline-flex items-center gap-1 sm:gap-2 px-3 py-2 sm:px-4 rounded-lg ${statusColors[status]} transition text-sm sm:text-base`}
-      >
-        {statusIcons[status]}
-        <span className="font-medium">{status}</span>
-        <ChevronDownIcon className="w-3 h-3 sm:w-4 sm:h-4" />
-      </button>
-
-      {isOpen && (
-        <div className="absolute right-0 mt-2 w-36 sm:w-40 bg-white border border-gray-300 rounded-md shadow-lg z-10">
-          {statusOptions.map((option) => (
-            <div
-              key={option}
-              onClick={() => {
-                setStatus(option);
-                setIsOpen(false);
-              }}
-              className="px-3 py-2 sm:px-4 cursor-pointer hover:bg-gray-100 flex items-center gap-2 text-xs sm:text-sm"
-            >
-              {statusIcons[option]}
-              {option}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
+const formatDate = (dateString) => {
+  if (!dateString) return "";
+  try {
+    return new Date(dateString).toLocaleString();
+  } catch {
+    return dateString;
+  }
 };
 
 const TicketDetails = () => {
-  const [email, setEmail] = useState("AOHBars@gmail.com");
-  const [businessName, setBusinessName] = useState("AOH BARS");
-  const [subject, setSubject] = useState("Money Deposit not working");
+  const { id } = useParams();
+
+  const { data, isLoading, isError, error, refetch } = useTicket(id);
+  const {
+    data: repliesData,
+    isLoading: repliesLoading,
+    isError: repliesError,
+    refetch: refetchReplies,
+  } = useTicketReplies(id);
+
+  const replies = Array.isArray(repliesData)
+    ? repliesData
+    : repliesData?.data ?? [];
+
+  // Local editable fields
+  const [email, setEmail] = useState("");
+  const [businessName, setBusinessName] = useState("");
+  const [subject, setSubject] = useState("");
   const [reply, setReply] = useState("");
   const [image1, setImage1] = useState(null);
   const [image2, setImage2] = useState(null);
   const [status, setStatus] = useState("New");
   const [showModal, setShowModal] = useState(false);
+
+  useEffect(() => {
+    if (!data) return;
+    const ticket = data?.data ?? data;
+    setEmail(ticket?.CreateBy?.email ?? "");
+    setBusinessName(ticket?.Customer?.Name ?? ticket?.CreateBy?.Name ?? "");
+    setSubject(ticket?.SupportTicketType?.Name ?? ticket?.question ?? "");
+    setReply("");
+
+    const sRaw = ticket?.Ticket_status || ticket?.TicketStatus || "New";
+    let s = sRaw;
+    if (/process/i.test(sRaw) || /in[- ]?progress/i.test(sRaw)) s = "On-Going";
+    if (/resolved/i.test(sRaw) || /closed/i.test(sRaw)) s = "Resolved";
+    if (/new/i.test(sRaw)) s = "New";
+    setStatus(s);
+  }, [data]);
+
+  const createReplyMutation = useCreateReply({
+    onSuccess: () => {
+      setShowModal(true);
+      setReply("");
+      refetchReplies();
+    },
+  });
+
+  const handleSubmitReply = () => {
+    if (!reply || reply.trim() === "") return;
+    createReplyMutation.mutate({ ticket_id: id, reply });
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center py-4 w-full">
+        <p className="text-lg text-gray-600 animate-pulse">Loading ticket…</p>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="flex flex-col items-center py-4 w-full">
+        <p className="text-lg text-red-600">
+          {error?.message || String(error)}
+        </p>
+        <button
+          onClick={() => refetch()}
+          className="mt-3 px-4 py-2 rounded bg-purple-600 text-white"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  const ticket = data?.data ?? data ?? {};
 
   return (
     <div className="w-full flex justify-center px-2 sm:px-4">
@@ -71,130 +105,178 @@ const TicketDetails = () => {
           <div className="flex items-center gap-3 sm:gap-4">
             <div className="w-4 h-4 sm:w-5 sm:h-5 bg-blue-500 rounded-full"></div>
             <p className="font-poppins font-medium text-sm sm:text-base text-black">
-              Ticket# 2023-CS123
+              Ticket# {ticket.support_ticket_id ?? ticket._id ?? id}
             </p>
           </div>
           <div className="flex flex-col items-start sm:items-end gap-2 w-full sm:w-auto">
             <p className="font-poppins font-medium text-xs sm:text-sm text-black">
-              Posted at 12:45 AM
+              Posted at {formatDate(ticket?.CreateAt ?? ticket?.createdAt)}
             </p>
-            <StatusDropdown status={status} setStatus={setStatus} />
+            <div className="text-sm text-black font-medium">
+              Status: {status}
+            </div>
           </div>
         </div>
 
         {/* Main Content */}
         <div className="flex flex-col items-end w-full gap-6 sm:gap-10">
-          <div className="flex flex-col items-start w-full gap-16 sm:gap-[120px]">
-            <div className="flex flex-col items-start w-full gap-6 sm:gap-8">
-              {/* Editable Fields */}
-              <div className="flex flex-col lg:flex-row lg:flex-wrap items-start w-full gap-4 sm:gap-6 lg:gap-7">
-                <div className="flex flex-col items-start gap-2 w-full lg:flex-1 lg:min-w-[280px]">
-                  <p className="font-poppins font-medium text-base sm:text-lg text-[#2E2A40]">
-                    Email
-                  </p>
-                  <input
-                    type="email"
-                    className="box-border p-3 sm:p-4 w-full h-[45px] sm:h-[50px] border border-black/50 rounded font-poppins text-sm sm:text-base text-black"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
+          <div className="flex flex-col items-start w-full gap-6 sm:gap-8">
+            <div className="flex flex-col lg:flex-row lg:flex-wrap items-start w-full gap-4 sm:gap-6 lg:gap-7">
+              <div className="flex flex-col items-start gap-2 w-full lg:flex-1 lg:min-w-[280px]">
+                <p className="font-poppins font-medium text-base sm:text-lg text-[#2E2A40]">
+                  Email
+                </p>
+                <input
+                  type="email"
+                  className="box-border p-3 sm:p-4 w-full h-[45px] sm:h-[50px] border border-black/50 rounded font-poppins text-sm sm:text-base text-black"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
+
+              <div className="flex flex-col items-start gap-2 w-full lg:flex-1 lg:min-w-[280px]">
+                <p className="font-poppins font-medium text-base sm:text-lg text-[#2E2A40]">
+                  Business Name
+                </p>
+                <input
+                  type="text"
+                  className="box-border p-3 sm:p-4 w-full h-[45px] sm:h-[50px] border border-black/50 rounded font-poppins text-sm sm:text-base text-black"
+                  value={businessName}
+                  onChange={(e) => setBusinessName(e.target.value)}
+                />
+              </div>
+
+              <div className="flex flex-col items-start gap-2 w-full lg:flex-1 lg:min-w-[280px]">
+                <p className="font-poppins font-medium text-base sm:text-lg text-[#2E2A40]">
+                  Ticket Subject
+                </p>
+                <input
+                  type="text"
+                  className="box-border p-3 sm:p-4 w-full h-[45px] sm:h-[50px] border border-black/50 rounded font-poppins text-sm sm:text-base text-black"
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                />
+              </div>
+            </div>
+
+            {/* Description */}
+            <p className="font-poppins font-medium text-base sm:text-lg text-black w-full">
+              {ticket?.question ?? ticket?.description ?? "-"}
+            </p>
+            <p className="font-poppins font-normal text-sm sm:text-base leading-[170%] text-black w-full">
+              {ticket?.details ?? ticket?.question_description ?? ""}
+            </p>
+
+            {/* Image Upload Section */}
+            <div className="flex flex-col items-start gap-2 w-full max-w-full sm:max-w-[366px]">
+              <p className="font-poppins font-medium text-base sm:text-lg text-[#2E2A40]">
+                Images Uploaded
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 border border-black/50 rounded p-3 sm:p-4 w-full">
+                <div className="flex items-center justify-between sm:justify-start gap-3 sm:gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <div className="flex justify-center items-center px-3 py-2 sm:px-2 sm:py-1 bg-gradient-to-b from-purple-700 to-red-600 rounded-lg">
+                      <p className="font-poppins font-semibold text-xs sm:text-sm text-white">
+                        Image 01
+                      </p>
+                    </div>
+                    <input
+                      type="file"
+                      className="hidden"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files[0];
+                        if (file) setImage1(URL.createObjectURL(file));
+                      }}
+                    />
+                  </label>
+                  {image1 && (
+                    <img
+                      src={image1}
+                      alt="Preview 1"
+                      className="w-10 h-10 sm:w-12 sm:h-12 object-cover rounded"
+                    />
+                  )}
                 </div>
 
-                <div className="flex flex-col items-start gap-2 w-full lg:flex-1 lg:min-w-[280px]">
-                  <p className="font-poppins font-medium text-base sm:text-lg text-[#2E2A40]">
-                    Business Name
-                  </p>
-                  <input
-                    type="text"
-                    className="box-border p-3 sm:p-4 w-full h-[45px] sm:h-[50px] border border-black/50 rounded font-poppins text-sm sm:text-base text-black"
-                    value={businessName}
-                    onChange={(e) => setBusinessName(e.target.value)}
-                  />
-                </div>
-
-                <div className="flex flex-col items-start gap-2 w-full lg:flex-1 lg:min-w-[280px]">
-                  <p className="font-poppins font-medium text-base sm:text-lg text-[#2E2A40]">
-                    Ticket Subject
-                  </p>
-                  <input
-                    type="text"
-                    className="box-border p-3 sm:p-4 w-full h-[45px] sm:h-[50px] border border-black/50 rounded font-poppins text-sm sm:text-base text-black"
-                    value={subject}
-                    onChange={(e) => setSubject(e.target.value)}
-                  />
+                <div className="flex items-center justify-between sm:justify-start gap-3 sm:gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <div className="flex justify-center items-center px-3 py-2 sm:px-2 sm:py-1 bg-gradient-to-b from-purple-700 to-red-600 rounded-lg">
+                      <p className="font-poppins font-semibold text-xs sm:text-sm text-white">
+                        Image 02
+                      </p>
+                    </div>
+                    <input
+                      type="file"
+                      className="hidden"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files[0];
+                        if (file) setImage2(URL.createObjectURL(file));
+                      }}
+                    />
+                  </label>
+                  {image2 && (
+                    <img
+                      src={image2}
+                      alt="Preview 2"
+                      className="w-10 h-10 sm:w-12 sm:h-12 object-cover rounded"
+                    />
+                  )}
                 </div>
               </div>
 
-              {/* Description */}
-              <p className="font-poppins font-medium text-base sm:text-lg text-black w-full">
-                How to deposit money to my portal?
-              </p>
-              <p className="font-poppins font-normal text-sm sm:text-base leading-[170%] text-black w-full">
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Lorem
-                ipsum dolor sit amet, consectetur adipiscing elit. Lorem ipsum
-                dolor sit amet, consectetur adipiscing elit.
-              </p>
-
-              {/* Image Upload Section */}
-              <div className="flex flex-col items-start gap-2 w-full max-w-full sm:max-w-[366px]">
-                <p className="font-poppins font-medium text-base sm:text-lg text-[#2E2A40]">
-                  Images Uploaded
-                </p>
-                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 border border-black/50 rounded p-3 sm:p-4 w-full">
-                  {/* Image 01 */}
-                  <div className="flex items-center justify-between sm:justify-start gap-3 sm:gap-4">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <div className="flex justify-center items-center px-3 py-2 sm:px-2 sm:py-1 bg-gradient-to-b from-purple-700 to-red-600 rounded-lg">
-                        <p className="font-poppins font-semibold text-xs sm:text-sm text-white">
-                          Image 01
-                        </p>
-                      </div>
-                      <input
-                        type="file"
-                        className="hidden"
-                        accept="image/*"
-                        onChange={(e) => {
-                          const file = e.target.files[0];
-                          if (file) setImage1(URL.createObjectURL(file));
-                        }}
-                      />
-                    </label>
-                    {image1 && (
-                      <img
-                        src={image1}
-                        alt="Preview 1"
-                        className="w-10 h-10 sm:w-12 sm:h-12 object-cover rounded"
-                      />
-                    )}
+              {/* Replies */}
+              <div className="w-full mt-6">
+                <h4 className="text-lg font-semibold mb-4">Replies</h4>
+                {repliesLoading ? (
+                  <p className="text-gray-600">Loading replies…</p>
+                ) : repliesError ? (
+                  <div className="text-center">
+                    <p className="text-red-600">Failed to load replies</p>
+                    <button
+                      onClick={() => refetchReplies()}
+                      className="mt-2 px-3 py-1 bg-purple-600 text-white rounded"
+                    >
+                      Retry
+                    </button>
                   </div>
-
-                  {/* Image 02 */}
-                  <div className="flex items-center justify-between sm:justify-start gap-3 sm:gap-4">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <div className="flex justify-center items-center px-3 py-2 sm:px-2 sm:py-1 bg-gradient-to-b from-purple-700 to-red-600 rounded-lg">
-                        <p className="font-poppins font-semibold text-xs sm:text-sm text-white">
-                          Image 02
-                        </p>
+                ) : replies.length === 0 ? (
+                  <p className="text-gray-600">No replies yet.</p>
+                ) : (
+                  <div className="space-y-4">
+                    {replies.map((r) => (
+                      <div
+                        key={r._id || r.support_ticket_reply_id}
+                        className="p-4 rounded-lg border border-gray-200 bg-white"
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-sm font-medium">
+                              {r.Employee?.Name?.[0] ??
+                                r.CreateBy?.Name?.[0] ??
+                                "U"}
+                            </div>
+                            <div>
+                              <div className="text-sm font-medium text-gray-800">
+                                {r.Employee?.Name ??
+                                  r.CreateBy?.Name ??
+                                  "Unknown"}
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                {formatDate(r.CreateAt ?? r.createdAt)}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            Status: {r.Ticket_status ?? r.TicketStatus ?? "-"}
+                          </div>
+                        </div>
+                        <div className="text-sm text-gray-700">{r.reply}</div>
                       </div>
-                      <input
-                        type="file"
-                        className="hidden"
-                        accept="image/*"
-                        onChange={(e) => {
-                          const file = e.target.files[0];
-                          if (file) setImage2(URL.createObjectURL(file));
-                        }}
-                      />
-                    </label>
-                    {image2 && (
-                      <img
-                        src={image2}
-                        alt="Preview 2"
-                        className="w-10 h-10 sm:w-12 sm:h-12 object-cover rounded"
-                      />
-                    )}
+                    ))}
                   </div>
-                </div>
+                )}
               </div>
             </div>
 
@@ -212,11 +294,14 @@ const TicketDetails = () => {
                 />
               </div>
               <button
-                onClick={() => setShowModal(true)}
-                className="flex justify-center items-center px-6 py-3 sm:px-10 sm:py-4 bg-gradient-to-b from-purple-700 to-red-600 rounded-lg w-full sm:w-auto"
+                onClick={handleSubmitReply}
+                disabled={createReplyMutation.isLoading}
+                className="flex justify-center items-center px-6 py-3 sm:px-10 sm:py-4 bg-gradient-to-b from-purple-700 to-red-600 rounded-lg w-full sm:w-auto disabled:opacity-60"
               >
                 <p className="font-poppins font-medium text-base sm:text-lg text-white">
-                  Submit Reply
+                  {createReplyMutation.isLoading
+                    ? "Submitting..."
+                    : "Submit Reply"}
                 </p>
               </button>
             </div>
