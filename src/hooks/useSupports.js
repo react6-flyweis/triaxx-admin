@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import * as supportsService from "../services/supportsService";
 import * as supportTicketsService from "../services/supportTicketsService";
 import * as supportTicketRepliesService from "../services/supportTicketRepliesService";
+import useStore from "../store/useStore";
 
 export function useTicketTypes(options = {}) {
   return useQuery({
@@ -62,13 +63,56 @@ export function useCreateReply(options = {}) {
 
   return useMutation({
     mutationFn: supportTicketRepliesService.createReply,
-    onSuccess: (data, variables, context) => {
-      // variables should contain ticket_id so we can invalidate that ticket's replies
+    // optimistic update: add the reply locally first
+    onMutate: async (variables) => {
+      const ticketId = variables?.ticket_id;
+      if (!ticketId) return null;
+
+      await qc.cancelQueries(["supportTicketReplies", ticketId]);
+      const previous = qc.getQueryData(["supportTicketReplies", ticketId]);
+
+      // get current user for optimistic metadata
+      const user = useStore.getState().user;
+      const optimisticReply = {
+        support_ticket_reply_id: `optimistic-${Date.now()}`,
+        reply: variables?.reply,
+        CreateAt: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        _optimistic: true,
+        Employee: { Name: user?.Name || user?.name || "You" },
+        CreateBy: { Name: user?.Name || user?.name || "You" },
+        Ticket_status: variables?.Ticket_status ?? variables?.ticket_status,
+      };
+
+      // if previous is an object with data arr, handle both shapes
+      if (Array.isArray(previous)) {
+        qc.setQueryData(
+          ["supportTicketReplies", ticketId],
+          [...previous, optimisticReply]
+        );
+      } else if (previous && Array.isArray(previous.data)) {
+        qc.setQueryData(["supportTicketReplies", ticketId], {
+          ...previous,
+          data: [...previous.data, optimisticReply],
+        });
+      } else {
+        qc.setQueryData(["supportTicketReplies", ticketId], [optimisticReply]);
+      }
+
+      return { previous };
+    },
+    onError: (err, variables, context) => {
+      const ticketId = variables?.ticket_id;
+      if (ticketId && context?.previous) {
+        qc.setQueryData(["supportTicketReplies", ticketId], context.previous);
+      }
+      if (onError) onError(err, variables, context);
+    },
+    onSettled: (data, err, variables, context) => {
       const ticketId = variables?.ticket_id;
       if (ticketId) qc.invalidateQueries(["supportTicketReplies", ticketId]);
-      if (onSuccess) onSuccess(data, variables, context);
+      if (onSuccess && !err) onSuccess(data, variables, context);
     },
-    onError,
     ...rest,
   });
 }
