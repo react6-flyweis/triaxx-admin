@@ -26,8 +26,17 @@ export async function fetchReplies(ticketId) {
 
 export async function createReply(payload) {
   try {
-    // payload should include ticket_id and reply (and optionally other fields)
-    const res = await api.post(`${BASE_URL}/create`, payload);
+    // Accept either { ticket_id, reply, ... } or { support_ticket_id, reply, ... }
+    const body = { ...payload };
+    if (body.ticket_id && !body.support_ticket_id) {
+      body.support_ticket_id = body.ticket_id;
+      // keep ticket_id for callers that rely on it
+    }
+
+    const res = await api.post(`${BASE_URL}/create`, body);
+
+    // Some endpoints wrap response in { data: ... } while others return array/object directly.
+    // Normalize to return the server payload directly.
     return res.data;
   } catch (err) {
     handleAxiosError(err);
