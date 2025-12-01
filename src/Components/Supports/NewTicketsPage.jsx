@@ -2,7 +2,9 @@ import React from "react";
 import TicketListItem from "./TicketListItem";
 
 const NewTicketsPage = ({ allTickets }) => {
-  const newTickets = allTickets.filter((ticket) => ticket.status === "New");
+  const newTickets = allTickets.filter(
+    (ticket) => ticket.status === "Pending" || ticket.status === "New"
+  );
 
   return (
     <div className="flex flex-col items-start py-4 w-full">
