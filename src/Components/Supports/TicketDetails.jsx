@@ -6,6 +6,7 @@ import {
   useTicketReplies,
   useCreateReply,
 } from "../../hooks/useSupports";
+import useStore from "../../store/useStore";
 import SuccessDialog from "@/Components/ui/SuccessDialog";
 
 const formatDate = (dateString) => {
@@ -19,6 +20,7 @@ const formatDate = (dateString) => {
 
 const TicketDetails = () => {
   const { id } = useParams();
+  const user = useStore((s) => s.user);
 
   const { data, isLoading, isError, error, refetch } = useTicket(id);
   const {
@@ -68,7 +70,20 @@ const TicketDetails = () => {
 
   const handleSubmitReply = () => {
     if (!reply || reply.trim() === "") return;
-    createReplyMutation.mutate({ ticket_id: id, reply });
+    const employee_id =
+      user?.Employee_id ||
+      user?.employee_id ||
+      user?.id ||
+      user?.user_id ||
+      null;
+
+    createReplyMutation.mutate({
+      ticket_id: id,
+      reply,
+      Ticket_status: "Process",
+      Status: true,
+      employee_id,
+    });
   };
 
   if (isLoading) {
