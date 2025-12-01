@@ -1,14 +1,14 @@
 import api from "./apiClient";
 
-const PATH = "/restaurant/reports";
+const PATH = "/restaurant/reports/reports";
 const PATH_ADMIN = "/admin/reports";
 
-const endpointMap = {
-  today: "reports_today",
-  month: "reports_month",
-  "6months": "reports_six_month",
-  year: "reports_six_month",
-};
+// const endpointMap = {
+//   today: "reports_today",
+//   month: "reports_month",
+//   "6months": "reports_six_month",
+//   year: "reports_six_month",
+// };
 
 const handleAxiosError = (err) => {
   const message =
@@ -20,10 +20,9 @@ const handleAxiosError = (err) => {
 
 export const reportsService = {
   // Fetch reports by period id (today, month, 6months, year)
-  getReports: async (periodId = "today") => {
+  getReports: async () => {
     try {
-      const endpoint = endpointMap[periodId] || endpointMap.today;
-      const res = await api.get(`${PATH}/${endpoint}`);
+      const res = await api.get(`${PATH}`);
       return res.data;
     } catch (err) {
       console.error("Error fetching reports:", err);
