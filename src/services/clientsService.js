@@ -12,9 +12,12 @@ const handleAxiosError = (err) => {
 
 export const clientsService = {
   // Get all clients
-  getAllClients: async () => {
+  getAllClients: async (filter = "all") => {
     try {
-      const res = await api.get(`${PATH}/getall`);
+      // pass filter as query param: /getall?filter=all|active|repeat|inactive
+      const res = await api.get(`${PATH}/getall`, {
+        params: { filter },
+      });
       return res.data;
     } catch (err) {
       console.error("Error fetching clients:", err);
