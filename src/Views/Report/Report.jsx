@@ -3,7 +3,12 @@ import { useReports } from "@/hooks/useReports";
 import StatCard from "@/Components/ui/StatCard";
 import SkeletonCard from "@/Components/ui/SkeletonCard";
 import { Users, UserX, TrendingUp } from "lucide-react";
-import ActiveClientsSection from "./ActiveClientsSection";
+import ActiveClientsChart from "./ActiveClientsChart";
+import ClientsTable from "./ClientsTable";
+import InactiveClientsChart from "./InactiveClientsChart";
+import SubscriptionsTable from "./SubscriptionsTable";
+import RevenueCard from "./RevenueCard";
+import LatestTransactions from "./LatestTransactions";
 
 const Report = () => {
   const { data: reportData, isLoading, isError, error } = useReports();
@@ -73,10 +78,83 @@ const Report = () => {
         </div>
       )}
 
-      {/* Report Content: only Active Clients */}
+      {/* Report Content: Active and Inactive Clients */}
       {!isLoading && (reportData || isError) && (
         <div className="space-y-8">
-          <ActiveClientsSection reportData={reportData} />
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 ">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold">Active Clients</h3>
+                <button className="text-sm text-blue-600">See all</button>
+              </div>
+
+              <ClientsTable filter="active" />
+            </div>
+
+            <div className="">
+              <div className="flex">
+                <h3 className="text-lg font-bold mb-4 mr-1">Active Clients</h3>
+                <span>(Reports)</span>
+              </div>
+
+              <ActiveClientsChart reportData={reportData} />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div>
+              <div className="flex">
+                <h3 className="text-lg font-bold mb-4 mr-1">
+                  Inactive Clients
+                </h3>
+                <span>(Reports)</span>
+              </div>
+
+              <InactiveClientsChart reportData={reportData} />
+            </div>
+
+            <div className="lg:col-span-2">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold">Inactive Clients</h3>
+                <button className="text-sm text-red-600">See all</button>
+              </div>
+
+              <ClientsTable filter="inactive" />
+            </div>
+          </div>
+          {/* Revenue & Subscriptions Section (from design) */}
+          <div className="mb-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div>
+                <div className="flex">
+                  <h3 className="text-lg font-bold mb-4 mr-1">
+                    Subscription Sales
+                  </h3>
+                  <span>(Reports)</span>
+                </div>
+                <RevenueCard
+                  total={reportData?.reports?.TotalRevenueFormatted || "0 XOF"}
+                  changePercent={
+                    reportData?.reports?.RevenueChangePercent || 12
+                  }
+                  bars={reportData?.reports?.RevenueBars || undefined}
+                  months={undefined}
+                />
+              </div>
+
+              <div className="lg:col-span-2">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-bold">Subscriptions Sales</h3>
+                  <button className="text-sm text-red-600">See all</button>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <SubscriptionsTable />
+                </div>
+              </div>
+            </div>
+          </div>
+          {/* Latest Transactions Section (from design) */}
+          <LatestTransactions />
         </div>
       )}
     </div>
