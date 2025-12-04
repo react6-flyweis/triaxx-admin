@@ -1,10 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { clientsService } from "@/services/clientsService";
 
-export function useClients(options = {}) {
+export function useClients(filter = "all", options = {}) {
   return useQuery({
-    queryKey: ["clients"],
-    queryFn: clientsService.getAllClients,
+    queryKey: ["clients", filter],
+    queryFn: () => clientsService.getAllClients(filter),
     staleTime: 1000 * 60 * 1, // 1 minute
     retry: 1,
     refetchOnWindowFocus: false,
