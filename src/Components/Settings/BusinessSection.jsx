@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { ChevronRight, Pencil } from 'lucide-react';
-import BusinessSubscriptionSettings from './BusinessSubscriptionSettings';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from "react";
+import { ChevronRight, Pencil } from "lucide-react";
+import BusinessSubscriptionSettings from "./BusinessSubscriptionSettings";
+import { useNavigate } from "react-router-dom";
 
 // SectionCard Component
 const SectionCard = ({ title, children }) => (
@@ -19,7 +19,13 @@ const RowItem = ({ label, editable = false, isBold = false, onClick }) => (
     className="flex justify-between items-center px-4 h-14 border-t border-gray-300 cursor-pointer"
     onClick={onClick}
   >
-    <p className={`text-[16px] ${isBold ? 'font-semibold' : 'font-medium'} text-black`}>{label}</p>
+    <p
+      className={`text-[16px] ${
+        isBold ? "font-semibold" : "font-medium"
+      } text-black`}
+    >
+      {label}
+    </p>
     {editable ? (
       <div className="w-6 h-6 bg-black rounded-full flex items-center justify-center">
         <Pencil className="w-3.5 h-3.5 text-white" />
@@ -38,12 +44,16 @@ const ToggleRow = ({ label, description, enabled, onToggle }) => (
       <div
         onClick={onToggle}
         className={`w-11 h-[22px] flex items-center rounded-full cursor-pointer transition-all duration-300 ${
-          enabled ? 'bg-gradient-to-b from-[#6A1B9A99] to-[#D32F2F99]' : 'bg-gray-300'
+          enabled
+            ? "bg-linear-to-b from-[#6A1B9A99] to-[#D32F2F99]"
+            : "bg-gray-300"
         }`}
       >
         <div
           className={`w-5 h-5 rounded-full shadow-md transform transition-transform duration-300 ${
-            enabled ? 'translate-x-6 bg-gradient-to-b from-[#6A1B9A99] to-[#D32F2F99]' : 'translate-x-1 bg-white'
+            enabled
+              ? "translate-x-6 bg-linear-to-b from-[#6A1B9A99] to-[#D32F2F99]"
+              : "translate-x-1 bg-white"
           }`}
         />
       </div>
@@ -62,7 +72,9 @@ const SubscriptionDetails = ({ onBack }) => (
       ← Back to Settings
     </button>
     <h2 className="text-2xl font-bold mb-4">Subscription Details</h2>
-    <p className="text-gray-700">Here you can manage your subscription plan, features, and renewal details.</p>
+    <p className="text-gray-700">
+      Here you can manage your subscription plan, features, and renewal details.
+    </p>
     {/* Add more content here as needed */}
   </div>
 );
@@ -71,16 +83,16 @@ const SubscriptionDetails = ({ onBack }) => (
 export default function BusinessSettings() {
   const [disablePriceChange, setDisablePriceChange] = useState(true);
   const [activeSection, setActiveSection] = useState(null); // null or 'subscriptionDetails'
-const navigate=useNavigate()
-  const handleBack = () => setActiveSection(null);
+  const navigate = useNavigate();
+  // const handleBack = () => setActiveSection(null);
 
-  if (activeSection === 'subscriptionDetails') {
-    return <BusinessSubscriptionSettings/>;
+  if (activeSection === "subscriptionDetails") {
+    return <BusinessSubscriptionSettings />;
   }
 
-  const handleNavigate=()=>{
-    navigate('/clients')
-  }
+  const handleNavigate = (filter) => {
+    navigate(`/clients?filter=${filter}`);
+  };
 
   return (
     <div className="p-6 space-y-8">
@@ -91,27 +103,37 @@ const navigate=useNavigate()
         <RowItem
           label="Subscription Details"
           editable
-          onClick={() => setActiveSection('subscriptionDetails')}
-
-
+          onClick={() => setActiveSection("subscriptionDetails")}
         />
-        <RowItem label="Active Subscriptions"  onClick={()=>handleNavigate()}/>
-        <RowItem label="Inactive Subscriptions" onClick={()=>handleNavigate()} />
+        <RowItem
+          label="Active Subscriptions"
+          onClick={() => handleNavigate("active")}
+        />
+        <RowItem
+          label="Inactive Subscriptions"
+          onClick={() => handleNavigate("inactive")}
+        />
         <ToggleRow
           label="Turn off Subscription Price Change"
           description="You cannot change the Price of the Subscriptions"
           enabled={disablePriceChange}
           onToggle={() => setDisablePriceChange(!disablePriceChange)}
         />
-        <RowItem label="Billing History"  onClick={()=>navigate('/billing-history')}/>
+        <RowItem
+          label="Billing History"
+          onClick={() => navigate("/billing-history")}
+        />
       </SectionCard>
 
       {/* Clients Section */}
-      <SectionCard title="Clients" onClick={()=>handleNavigate()}>
-        <RowItem label="All Clients"  onClick={()=>handleNavigate()}/>
-        <RowItem label="New Clients"  onClick={()=>handleNavigate()}/>
-        <RowItem label="Active Clients" onClick={()=>handleNavigate()}/>
-        <RowItem label="Inactive Clients (Unrenewed)" onClick={()=>handleNavigate()}/>
+      <SectionCard title="Clients" onClick={() => handleNavigate()}>
+        <RowItem label="All Clients" onClick={() => handleNavigate()} />
+        <RowItem label="New Clients" onClick={() => handleNavigate()} />
+        <RowItem label="Active Clients" onClick={() => handleNavigate()} />
+        <RowItem
+          label="Inactive Clients (Unrenewed)"
+          onClick={() => handleNavigate()}
+        />
       </SectionCard>
     </div>
   );
