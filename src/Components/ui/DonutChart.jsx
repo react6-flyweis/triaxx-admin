@@ -1,5 +1,3 @@
-import React from "react";
-
 const DonutChart = ({
   newPercent = 30,
   renewedPercent = 70,
@@ -18,13 +16,19 @@ const DonutChart = ({
   const renewedOffset = -newDash;
   const renewedDash = (renewedPercent / 100) * circumference;
 
-  const centerTextStyle = {
-    fontSize: Math.round(size / 5),
-    fontWeight: 700,
-    fill: "#86efac",
-    textAnchor: "middle",
-    dominantBaseline: "central",
-  };
+  // Compute angles for label placement (we rotate circles by -90 so 0% starts at top)
+  const startAngle = -90;
+  const newSweep = (newPercent / 100) * 360;
+  const renewedSweep = (renewedPercent / 100) * 360;
+  const newMid = startAngle + newSweep / 2;
+  const renewedMid = startAngle + newSweep + renewedSweep / 2;
+
+  const labelRadius = radius - stroke / 10; // position labels near the middle of the stroke
+  const deg2rad = (d) => (d * Math.PI) / 180;
+  const newLabelX = Math.cos(deg2rad(newMid)) * labelRadius;
+  const newLabelY = Math.sin(deg2rad(newMid)) * labelRadius;
+  const renewedLabelX = Math.cos(deg2rad(renewedMid)) * labelRadius;
+  const renewedLabelY = Math.sin(deg2rad(renewedMid)) * labelRadius;
 
   return (
     <svg
@@ -46,7 +50,7 @@ const DonutChart = ({
         <circle
           r={radius}
           fill="transparent"
-          stroke="#86efac"
+          stroke="#7bf1a8" //bg-green-300
           strokeWidth={stroke}
           strokeDasharray={`${renewedDash} ${circumference}`}
           strokeDashoffset={renewedOffset}
@@ -58,15 +62,37 @@ const DonutChart = ({
         <circle
           r={radius}
           fill="transparent"
-          stroke="#10b981"
+          stroke="#00a63e" //bg-green-600
           strokeWidth={stroke}
           strokeDasharray={`${newDash} ${circumference}`}
           strokeDashoffset={newOffset}
           strokeLinecap="round"
           transform="rotate(-90)"
         />
+        {/* Percentage labels positioned along the arc midpoints */}
+        <text
+          x={newLabelX}
+          y={newLabelY}
+          textAnchor="middle"
+          dominantBaseline="central"
+          fontSize={Math.max(10, Math.round(size * 0.1))}
+          fill="#ffffff"
+          style={{ pointerEvents: "none" }}
+        >
+          {`${Math.round(newPercent)}%`}
+        </text>
 
-        <text x="0" y="0" style={centerTextStyle}>{`${renewedPercent}%`}</text>
+        <text
+          x={renewedLabelX}
+          y={renewedLabelY}
+          textAnchor="middle"
+          dominantBaseline="central"
+          fontSize={Math.max(10, Math.round(size * 0.1))}
+          fill="#05692f"
+          style={{ pointerEvents: "none" }}
+        >
+          {`${Math.round(renewedPercent)}%`}
+        </text>
       </g>
     </svg>
   );
