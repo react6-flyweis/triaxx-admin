@@ -1,14 +1,34 @@
 import React, { useRef, useState } from "react";
 import withAdminLayout from "../../Views/AdminPanel/withAdminLayout";
 import dot from "../../assets/Images/admin/client/dot.png";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import logo from "../../assets/Images/Home/logo.png";
 import { useClients } from "../../hooks/useClients";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+} from "../ui/dropdown-menu";
 
 const Clients = () => {
   const [selectedClientIndex, setSelectedClientIndex] = useState(null);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [selectedPeriod, setSelectedPeriod] = useState("All Clients");
+  // dropdown menu is implemented with shadcn `DropdownMenu` so no local open state
+  const FILTER_OPTIONS = [
+    { label: "All Clients", value: "all" },
+    { label: "Active Clients", value: "active" },
+    { label: "Repeat Clients", value: "repeat" },
+    { label: "Inactive Clients", value: "inactive" },
+  ];
+
+  const [searchParams] = useSearchParams();
+  const [selectedFilter, setSelectedFilter] = useState(
+    () => searchParams.get("filter") || "all"
+  );
+  const selectedPeriod =
+    FILTER_OPTIONS.find((o) => o.value === selectedFilter)?.label ||
+    "All Clients";
   const [showRightPanel, setShowRightPanel] = useState(false);
   const buttonRefs = useRef([]);
   const rightPanelRef = useRef(null);
@@ -18,6 +38,9 @@ const Clients = () => {
 
   const [clients, setClients] = useState([]);
   const [dotPosition, setDotPosition] = useState({ top: 12, left: 0 });
+  const [isLargeScreen, setIsLargeScreen] = useState(
+    typeof window !== "undefined" ? window.innerWidth >= 1024 : false
+  );
 
   const getPlanButtonStyle = () => {
     return "bg-gradient-to-b from-purple-700 to-red-600 text-white";
@@ -40,6 +63,7 @@ const Clients = () => {
 
   const computeDotPosition = React.useCallback(() => {
     if (
+      !isLargeScreen ||
       selectedClientIndex === null ||
       !buttonRefs.current[selectedClientIndex] ||
       !rightPanelRef.current ||
@@ -73,11 +97,38 @@ const Clients = () => {
     scrollElement?.addEventListener("scroll", update);
     window.addEventListener("resize", update);
 
+    // Track whether the right-side panel (lg and up) is visible.
+    const mql = window.matchMedia("(min-width: 1024px)");
+    const mqListener = (e) => setIsLargeScreen(e.matches);
+    try {
+      setIsLargeScreen(mql.matches);
+      if (mql.addEventListener) mql.addEventListener("change", mqListener);
+      else mql.addListener(mqListener);
+    } catch {
+      // ignore
+    }
+
     return () => {
       scrollElement?.removeEventListener("scroll", update);
       window.removeEventListener("resize", update);
+      try {
+        if (mql.removeEventListener)
+          mql.removeEventListener("change", mqListener);
+        else mql.removeListener(mqListener);
+      } catch {
+        // ignore
+      }
     };
   }, [computeDotPosition, clients.length]);
+
+  const handlePlanButtonClick = (index, client) => {
+    if (isLargeScreen) {
+      setSelectedClientIndex(index);
+    } else {
+      const id = client?.Clients_id || client?._id || client?.id || "";
+      navigate(`/client-details/${id}`);
+    }
+  };
 
   const handleClientSelect = (index) => {
     setSelectedClientIndex(index);
@@ -89,15 +140,22 @@ const Clients = () => {
     setSelectedClientIndex(null);
   };
 
-  const dropdownOptions = ["All Clients", "Active Clients", "Inactive Clients"];
+  // dropdown options now map display labels to API filter values
+  const dropdownOptions = FILTER_OPTIONS;
 
-  // fetch clients via react-query
+  // Keep selectedFilter in sync with URL `filter` param (back/forward navigation)
+  React.useEffect(() => {
+    const f = searchParams.get("filter") || "all";
+    setSelectedFilter(f);
+  }, [searchParams]);
+
+  // fetch clients via react-query with selected filter
   const {
     data: rawClients,
     isLoading,
     isError,
     error,
-  } = useClients({
+  } = useClients(selectedFilter, {
     onError: (err) => {
       // keep this simple — components can show errors
       console.error("Failed to fetch clients", err);
@@ -142,34 +200,38 @@ const Clients = () => {
 
             {/* Dropdown Trigger */}
             <div className="relative w-full sm:w-auto">
-              <button
-                onClick={() => setDropdownOpen(!dropdownOpen)}
-                className="border border-black rounded-md px-4 py-2 text-gray-600 bg-white focus:outline-none focus:ring-2 w-full sm:w-auto"
-              >
-                {selectedPeriod}
-              </button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="border border-black rounded-md px-4 py-2 text-gray-600 bg-white focus:outline-none focus:ring-2 w-full sm:w-auto">
+                    {selectedPeriod}
+                  </button>
+                </DropdownMenuTrigger>
 
-              {/* Dropdown Menu */}
-              {dropdownOpen && (
-                <div className="absolute right-0 mt-2 w-full sm:w-[246px] bg-white shadow-[0px_4px_4px_rgba(0,0,0,0.25),inset_0px_0px_1px_rgba(0,0,0,0.25)] rounded-lg px-3 py-4 z-50">
-                  {dropdownOptions.map((period) => (
-                    <button
-                      key={period}
-                      onClick={() => {
-                        setSelectedPeriod(period);
-                        setDropdownOpen(false);
-                      }}
-                      className={`w-full text-left px-4 py-2 rounded text-[16px] font-medium font-[Manrope] leading-6 ${
-                        selectedPeriod === period
-                          ? "bg-linear-to-b from-[#6A1B9A] to-[#D32F2F] text-white"
-                          : "text-black hover:bg-gray-100"
-                      }`}
-                    >
-                      {period}
-                    </button>
-                  ))}
-                </div>
-              )}
+                <DropdownMenuContent
+                  side="bottom"
+                  align="end"
+                  className="w-full sm:w-[246px]"
+                >
+                  <DropdownMenuRadioGroup
+                    value={selectedFilter}
+                    onValueChange={(v) => setSelectedFilter(v)}
+                  >
+                    {dropdownOptions.map((opt) => (
+                      <DropdownMenuRadioItem
+                        key={opt.value}
+                        value={opt.value}
+                        className={`w-full text-left px-4 py-2 rounded text-[16px] font-medium leading-6 ${
+                          selectedFilter === opt.value
+                            ? "bg-linear-to-b from-[#6A1B9A] to-[#D32F2F] text-white"
+                            : "text-black"
+                        }`}
+                      >
+                        {opt.label}
+                      </DropdownMenuRadioItem>
+                    ))}
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </div>
@@ -179,7 +241,7 @@ const Clients = () => {
           className="flex flex-col lg:flex-row h-full relative gap-4 lg:gap-8 overflow-visible min-h-0"
           ref={mainContentRef}
         >
-          {selectedClientIndex !== null && (
+          {selectedClientIndex !== null && isLargeScreen && (
             <img
               src={dot}
               alt="dot"
@@ -274,7 +336,7 @@ const Clients = () => {
                       <div className="flex justify-center items-center gap-2">
                         <button
                           ref={(el) => (buttonRefs.current[index] = el)}
-                          onClick={() => setSelectedClientIndex(index)}
+                          onClick={() => handlePlanButtonClick(index, client)}
                           className={`px-6 py-3 rounded-full text-sm font-semibold transition-all duration-200 hover:shadow-md cursor-pointer ${getPlanButtonStyle(
                             client.plan
                           )}`}
