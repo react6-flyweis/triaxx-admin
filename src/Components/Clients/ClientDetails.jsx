@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import withAdminLayout from "../../Views/AdminPanel/withAdminLayout";
 import { useClient } from "../../hooks/useClients";
+import { useClientSubscription } from "../../hooks/useClientSubscription";
 import Loading from "../ui/Loading";
 import Restaurant from "../../assets/Images/admin/client/Restaurant.png";
 import Lock from "../../assets/Images/admin/client/Lock.png";
@@ -10,7 +11,6 @@ import Icon from "../../assets/Images/admin/client/Icon.png";
 import arrow from "../../assets/Images/Home/arrow.png";
 import Performance from "./Performance";
 import RenewalPopupModal from "./RenewalPopupModal";
-import EmployeeCard from "./EmployeeCard";
 
 const ClientDetails = () => {
   const [activeTab, setActiveTab] = useState("about");
@@ -20,11 +20,30 @@ const ClientDetails = () => {
   const client = clientRes?.data || null;
   const navigate = useNavigate();
 
+  // subscription hook for this client/restaurant
+  const {
+    data: subscriptionRes,
+    // error: subscriptionError,
+    isLoading: isSubLoading,
+  } = useClientSubscription(id);
+  const subscription = subscriptionRes?.data || null;
+
+  const hasSubscription = !isSubLoading && Boolean(subscription?.CurrentPlan);
+
   const yearsSince = (iso) => {
     if (!iso) return "1 Year";
     const diff = Date.now() - new Date(iso).getTime();
     const years = Math.floor(diff / (1000 * 60 * 60 * 24 * 365));
     return `${years > 0 ? years : 1} Year${years === 1 ? "" : "s"}`;
+  };
+
+  const formatDate = (val) => {
+    if (!val) return "-";
+    try {
+      return new Date(val).toLocaleDateString();
+    } catch {
+      return val;
+    }
   };
 
   // Handle basic loading and error states early
@@ -208,29 +227,69 @@ const ClientDetails = () => {
             </h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-10 mb-6 sm:mb-8">
-              {[
-                ["Current Plan", "6 Months Plan"],
-                ["Purchased Date", "Jan 20,2025"],
-                ["Renewal Date", "Jan 20,2025"],
-                ["First Purchase on", "Jan 20,2024"],
-                ["No of Renewals", "09"],
-              ].map(([label, value]) => (
-                <div key={label}>
-                  <p className="text-base sm:text-[18px] font-semibold">
-                    {label}
-                  </p>
-                  <div className="bg-linear-to-b from-[#6A1B9A1A] to-[#D32F2F1A] rounded-lg px-4 py-3 mt-2 text-base sm:text-[18px] font-medium">
-                    {value}
+              {(() => {
+                const values = [
+                  [
+                    "Current Plan",
+                    isSubLoading
+                      ? "Loading..."
+                      : subscription?.CurrentPlan ?? "No subscription",
+                  ],
+                  [
+                    "Purchased Date",
+                    isSubLoading
+                      ? "Loading..."
+                      : subscription?.PuchasedDate
+                      ? formatDate(subscription.PuchasedDate)
+                      : "-",
+                  ],
+                  [
+                    "Renewal Date",
+                    isSubLoading
+                      ? "Loading..."
+                      : subscription?.RenewalDate
+                      ? formatDate(subscription.RenewalDate)
+                      : "-",
+                  ],
+                  [
+                    "First Purchase on",
+                    isSubLoading
+                      ? "Loading..."
+                      : subscription?.FirstPurchaseOn
+                      ? formatDate(subscription.FirstPurchaseOn)
+                      : "-",
+                  ],
+                  [
+                    "No of Renewals",
+                    isSubLoading
+                      ? "Loading..."
+                      : typeof subscription?.NoofRenewals !== "undefined"
+                      ? subscription.NoofRenewals
+                      : 0,
+                  ],
+                ];
+
+                return values.map(([label, value]) => (
+                  <div key={label}>
+                    <p className="text-base sm:text-[18px] font-semibold">
+                      {label}
+                    </p>
+                    <div className="bg-linear-to-b from-[#6A1B9A1A] to-[#D32F2F1A] rounded-lg px-4 py-3 mt-2 text-base sm:text-[18px] font-medium">
+                      {value}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ));
+              })()}
             </div>
 
             {/* Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 sm:gap-8 mt-4">
               <button
-                className="flex items-center justify-center gap-2 px-6 sm:px-8 py-3 bg-linear-to-b from-[#6A1B9A] to-[#D32F2F] text-white rounded-xl text-base sm:text-[18px] w-full sm:w-auto"
-                onClick={() => setShowModal(true)}
+                disabled={!hasSubscription}
+                onClick={() => hasSubscription && setShowModal(true)}
+                className={`flex items-center justify-center gap-2 px-6 sm:px-8 py-3 bg-linear-to-b from-[#6A1B9A] to-[#D32F2F] text-white rounded-xl text-base sm:text-[18px] w-full sm:w-auto ${
+                  !hasSubscription ? "opacity-50 cursor-not-allowed" : ""
+                }`}
               >
                 <span className="hidden sm:inline">Send Renewal Message</span>
                 <span className="sm:hidden">Send Renewal</span>
@@ -356,7 +415,13 @@ const ClientDetails = () => {
 
       {activeTab === "performance" && <Performance clientId={id} />}
 
-      {showModal && <RenewalPopupModal onClose={() => setShowModal(false)} />}
+      {showModal && (
+        <RenewalPopupModal
+          onClose={() => setShowModal(false)}
+          restaurantId={client?.Clients_id}
+          email={client?.Email}
+        />
+      )}
     </div>
   );
 };
