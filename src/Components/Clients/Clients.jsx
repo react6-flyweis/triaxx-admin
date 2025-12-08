@@ -431,19 +431,20 @@ const Clients = () => {
                   <div className="text-base text-white/80 font-medium mb-2">
                     Last Year Sales:
                     <span className="text-white text-xl font-bold ml-2">
-                      {selectedClient.lastYearSales ||
-                        selectedClient.LastYearSales ||
-                        "30 412 XOF"}
+                      {selectedClient.lastYearSales ??
+                        selectedClient.LastYearSales ??
+                        ""}
                     </span>
                   </div>
 
                   <div className="text-base text-white/80 font-medium mb-8">
                     Total orders Last Year:
                     <span className="text-white text-xl font-bold ml-2">
-                      {selectedClient.totalOrders ||
-                        selectedClient.Total_Orders ||
-                        selectedClient.TotalOrders ||
-                        "3 412"}
+                      {selectedClient.TotalOrdersLastYear ??
+                        selectedClient.totalOrders ??
+                        selectedClient.Total_Orders ??
+                        selectedClient.TotalOrders ??
+                        ""}
                     </span>
                   </div>
 
@@ -533,8 +534,8 @@ const Clients = () => {
                     Last Year Sales
                   </div>
                   <div className="text-white text-xl font-bold">
-                    {selectedClient?.lastYearSales ||
-                      selectedClient?.LastYearSales ||
+                    {selectedClient?.lastYearSales ??
+                      selectedClient?.LastYearSales ??
                       "30 412 XOF"}
                   </div>
                 </div>
@@ -544,9 +545,10 @@ const Clients = () => {
                     Total Orders Last Year
                   </div>
                   <div className="text-white text-xl font-bold">
-                    {selectedClient?.totalOrders ||
-                      selectedClient?.Total_Orders ||
-                      selectedClient?.TotalOrders ||
+                    {selectedClient?.TotalOrdersLastYear ??
+                      selectedClient?.totalOrders ??
+                      selectedClient?.Total_Orders ??
+                      selectedClient?.TotalOrders ??
                       "3 412"}
                   </div>
                 </div>
