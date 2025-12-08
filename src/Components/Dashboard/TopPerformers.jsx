@@ -1,23 +1,29 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import React from "react";
+import { useNavigate } from "react-router-dom";
 
-const TopPerformers = () => {
+const TopPerformers = ({ performers } = {}) => {
   const navigate = useNavigate();
-  const performersData = [
-    { id: '01', company: 'AOH Bars', sales: '9 9000 XOF', renewalDate: 'March 01, 2025' },
-    { id: '02', company: 'Tech Hive', sales: '8 4500 XOF', renewalDate: 'April 10, 2025' },
-    { id: '03', company: 'Zenith Corp', sales: '7 1200 XOF', renewalDate: 'May 15, 2025' },
-    { id: '04', company: 'NovaX Labs', sales: '6 9800 XOF', renewalDate: 'June 21, 2025' },
-    { id: '05', company: 'ByteBurst', sales: '5 8700 XOF', renewalDate: 'July 30, 2025' },
-  ];
+  const performersData =
+    performers && Array.isArray(performers) && performers.length
+      ? performers.map((p, idx) => ({
+          id: String(idx + 1).padStart(2, "0"),
+          company: p?.CompnayName || p?.company || "Unknown",
+          sales: `${Number(p?.TotalSales || 0).toLocaleString()} XOF`,
+          renewalDate: p?.RenewalDate
+            ? new Date(p.RenewalDate).toLocaleDateString()
+            : "-",
+        }))
+      : [];
 
   return (
     <div className="flex flex-col gap-4 w-full">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h2 className="text-xl md:text-2xl font-bold text-black">Top Performers</h2>
+        <h2 className="text-xl md:text-2xl font-bold text-black">
+          Top Performers
+        </h2>
         <button
-          onClick={() => navigate('/top-performers-list')}
+          onClick={() => navigate("/top-performers-list")}
           className="text-sm font-semibold text-blue-600 hover:underline"
         >
           See all
@@ -36,19 +42,27 @@ const TopPerformers = () => {
           </div>
 
           {/* Table Rows */}
-          {performersData.map((item, index) => (
-            <div
-              key={index}
-              className={`grid grid-cols-4 md:grid-cols-5 items-center bg-white border-x border-b border-black/20 px-4 py-3 text-sm md:text-base ${
-                index === performersData.length - 1 ? 'rounded-b-2xl' : ''
-              }`}
-            >
-              <div>{item.id}</div>
-              <div className="col-span-2">{item.company}</div>
-              <div className="text-center text-green-500">{item.sales}</div>
-              <div className="hidden md:block text-center text-red-500">{item.renewalDate}</div>
+          {performersData.length === 0 ? (
+            <div className="p-6 text-center text-gray-500">
+              No top performers data available
             </div>
-          ))}
+          ) : (
+            performersData.map((item, index) => (
+              <div
+                key={index}
+                className={`grid grid-cols-4 md:grid-cols-5 items-center bg-white border-x border-b border-black/20 px-4 py-3 text-sm md:text-base ${
+                  index === performersData.length - 1 ? "rounded-b-2xl" : ""
+                }`}
+              >
+                <div>{item.id}</div>
+                <div className="col-span-2">{item.company}</div>
+                <div className="text-center text-green-500">{item.sales}</div>
+                <div className="hidden md:block text-center text-red-500">
+                  {item.renewalDate}
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>
