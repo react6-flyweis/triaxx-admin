@@ -23,4 +23,19 @@ export const subscriptionsService = {
       handleAxiosError(err);
     }
   },
+  // Get subscription details purchased for a restaurant
+  getRestaurantSubscriptionPurchased: async (restaurant_id) => {
+    try {
+      const res = await api.get(
+        `/restaurant/admin_plan_buy_restaurant/getRestaurantSubscriptionPurchased`,
+        {
+          params: { restaurant_id },
+        }
+      );
+      return res.data; // expected shape: { success, message, data }
+    } catch (err) {
+      console.error("Error fetching restaurant subscription:", err);
+      handleAxiosError(err);
+    }
+  },
 };
