@@ -48,8 +48,20 @@ export async function createTicketType(payload) {
   }
 }
 
+export async function fetchTicketsChart(filter = "1Month") {
+  try {
+    const res = await api.get(
+      `/restaurant/support_ticket/chart?filter=${filter}`
+    );
+    return res.data;
+  } catch (err) {
+    handleAxiosError(err);
+  }
+}
+
 export default {
   fetchTicketTypes,
   fetchTicketById,
   createTicketType,
+  fetchTicketsChart,
 };
