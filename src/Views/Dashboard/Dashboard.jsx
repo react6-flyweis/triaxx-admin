@@ -1,64 +1,96 @@
-import React, { useState } from 'react';
-import { ChevronDown, DollarSign, TrendingUp, Users } from 'lucide-react';
-import withAdminLayout from '../AdminPanel/withAdminLayout';
-import CurrentMonthActivity from '../../Components/Dashboard/CurrentMonthActivity';
-import MonthlyGrowthChart from '../../Components/Dashboard/MonthlyGrowthChart';
-import ProfitAfterTax from '../../Components/Dashboard/ProfitAfterTax';
-import TopPerformers from '../../Components/Dashboard/TopPerformers';
-import SubscriptionsPurchased from '../../Components/Dashboard/SubscriptionsPurchased';
-import HeatMapCities from '../../Components/Dashboard/HeatMapCities';
-import SupportTickets from '../../Components/Dashboard/SupportTickets';
-import SubscriptionRenewalAlert from '../../Components/Dashboard/SubscriptionRenewalAlert';
+import { DollarSign, TrendingUp, Users } from "lucide-react";
+import withAdminLayout from "../AdminPanel/withAdminLayout";
+import CurrentMonthActivity from "../../Components/Dashboard/CurrentMonthActivity";
+import MonthlyGrowthChart from "../../Components/Dashboard/MonthlyGrowthChart";
+import ProfitAfterTax from "../../Components/Dashboard/ProfitAfterTax";
+import TopPerformers from "../../Components/Dashboard/TopPerformers";
+import SubscriptionsPurchased from "../../Components/Dashboard/SubscriptionsPurchased";
+import HeatMapCities from "../../Components/Dashboard/HeatMapCities";
+import SupportTickets from "../../Components/Dashboard/SupportTickets";
+import SubscriptionRenewalAlert from "../../Components/Dashboard/SubscriptionRenewalAlert";
+import { useReportsStats } from "@/hooks/useReports";
 
 const Dashboard = () => {
-  const [selectedPeriod, setSelectedPeriod] = useState('Today');
-  const [dropdownOpen, setDropdownOpen] = useState(false);
+  // const [selectedPeriod, setSelectedPeriod] = useState("Today");
+  // const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const metrics = [
     {
-      title: 'Total Revenue',
-      value: '1 9008 xof',
+      title: "Total Revenue",
+      value: null,
       icon: DollarSign,
-      bgColor: 'bg-orange-100',
-      iconColor: 'text-orange-500'
+      bgColor: "bg-orange-100",
+      iconColor: "text-orange-500",
     },
     {
-      title: 'Monthly Recurring Revenue',
-      value: '900 xof',
+      title: "Monthly Recurring Revenue",
+      value: null,
       icon: TrendingUp,
-      bgColor: 'bg-pink-100',
-      iconColor: 'text-pink-500'
+      bgColor: "bg-pink-100",
+      iconColor: "text-pink-500",
     },
     {
-      title: 'Total POS Clients',
-      value: '344',
+      title: "Total POS Clients",
+      value: null,
       icon: Users,
-      bgColor: 'bg-green-100',
-      iconColor: 'text-green-500'
-    }
+      bgColor: "bg-green-100",
+      iconColor: "text-green-500",
+    },
+  ];
+
+  // Fetch live stats and override metrics values when available
+  const { data: stats, isLoading: statsLoading } = useReportsStats();
+
+  console.log("Dashboard reports stats:", stats);
+
+  const totalRevenueDisplay = stats
+    ? `${Number(stats?.TotalRevenueCount || 0).toLocaleString()} XOF`
+    : null;
+
+  const monthlyRecurringDisplay = stats
+    ? `${Number(stats?.MonthyRecurringCount || 0).toLocaleString()} XOF`
+    : null;
+
+  const totalPosClientsDisplay = stats
+    ? `${Number(stats?.TotalPosClientsRestaurant || 0).toLocaleString()}`
+    : null;
+
+  const metricsWithData = [
+    { ...metrics[0], value: totalRevenueDisplay },
+    { ...metrics[1], value: monthlyRecurringDisplay },
+    { ...metrics[2], value: totalPosClientsDisplay },
   ];
 
   return (
     <div className="min-h-screen p-4 md:p-6 w-full">
       {/* Topbar */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-        <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Dashboard</h1>
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
+          Dashboard
+        </h1>
 
         {/* Dropdown */}
-        <div className="relative z-20">
+        {/* <div className="relative z-20">
           <button
             onClick={() => setDropdownOpen(!dropdownOpen)}
             className="flex items-center gap-2 w-[129px] h-[35px] px-4 py-2 bg-white border border-black rounded-lg shadow-sm hover:bg-gray-50 transition-colors"
           >
-            <span className="text-gray-700 text-sm font-medium">{selectedPeriod}</span>
+            <span className="text-gray-700 text-sm font-medium">
+              {selectedPeriod}
+            </span>
             <ChevronDown className="w-4 h-4 text-gray-500" />
           </button>
 
           {dropdownOpen && (
             <div className="absolute right-0 mt-2 w-[246px] bg-white shadow rounded-lg flex flex-col px-3 py-5 gap-2">
               {[
-                'Today', 'Yesterday', 'This Week', 'Three Month', 'Six Month', 'This Month'
-              ].map(period => (
+                "Today",
+                "Yesterday",
+                "This Week",
+                "Three Month",
+                "Six Month",
+                "This Month",
+              ].map((period) => (
                 <button
                   key={period}
                   onClick={() => {
@@ -68,9 +100,11 @@ const Dashboard = () => {
                   className={`
                     w-full text-left px-2 py-2 rounded 
                     text-sm font-medium font-[Manrope] 
-                    ${selectedPeriod === period 
-                      ? 'bg-gradient-to-b from-[#6A1B9A] to-[#D32F2F] text-white' 
-                      : 'hover:bg-gray-100 text-black'}
+                    ${
+                      selectedPeriod === period
+                        ? "bg-gradient-to-b from-[#6A1B9A] to-[#D32F2F] text-white"
+                        : "hover:bg-gray-100 text-black"
+                    }
                   `}
                 >
                   {period}
@@ -78,12 +112,12 @@ const Dashboard = () => {
               ))}
             </div>
           )}
-        </div>
+        </div> */}
       </div>
 
       {/* Metrics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-6">
-        {metrics.map((metric, index) => {
+        {metricsWithData.map((metric, index) => {
           const IconComponent = metric.icon;
           return (
             <div
@@ -91,12 +125,24 @@ const Dashboard = () => {
               className="bg-white rounded-3xl p-6 shadow transition-shadow w-full flex items-center"
             >
               <div className="flex items-center gap-6">
-                <div className={`w-14 h-14 rounded-full ${metric.bgColor} flex items-center justify-center`}>
+                <div
+                  className={`w-14 h-14 rounded-full ${metric.bgColor} flex items-center justify-center`}
+                >
                   <IconComponent className={`w-6 h-6 ${metric.iconColor}`} />
                 </div>
                 <div>
-                  <h3 className="text-gray-600 font-medium text-base">{metric.title}</h3>
-                  <p className="text-gray-900 font-bold text-xl">{metric.value}</p>
+                  <h3 className="text-gray-600 font-medium text-base">
+                    {metric.title}
+                  </h3>
+                  <p className="text-gray-900 font-bold text-xl">
+                    {statsLoading ? (
+                      <span className="text-gray-400">Loading...</span>
+                    ) : metric.value !== null ? (
+                      metric.value
+                    ) : (
+                      <span className="text-gray-400">—</span>
+                    )}
+                  </p>
                 </div>
               </div>
             </div>
@@ -107,20 +153,24 @@ const Dashboard = () => {
       {/* Section 1 */}
       <div className="flex flex-col lg:flex-row gap-4 mb-6">
         <div className="w-full lg:w-3/5">
-          <CurrentMonthActivity />
+          <CurrentMonthActivity
+            activityData={stats?.WeekingAcitvityChartbyDay ?? []}
+          />
         </div>
         <div className="w-full lg:w-2/5">
-          <MonthlyGrowthChart />
+          <MonthlyGrowthChart
+            monthlyData={stats?.MonthlyGrowthChartByMonth ?? []}
+          />
         </div>
       </div>
 
       {/* Section 2 */}
       <div className="flex flex-col lg:flex-row gap-4 mb-6">
         <div className="w-full lg:w-2/5">
-          <ProfitAfterTax />
+          <ProfitAfterTax profitData={stats?.ProfitAfterTax ?? []} />
         </div>
         <div className="w-full lg:w-3/5">
-          <TopPerformers />
+          <TopPerformers performers={stats?.TopPerformersList ?? []} />
         </div>
       </div>
 
