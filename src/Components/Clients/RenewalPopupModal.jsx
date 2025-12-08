@@ -1,20 +1,32 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import SuccessDialog from "@/Components/ui/SuccessDialog";
+import useSendRenewalEmail from "@/hooks/useSendRenewalEmail";
 import { useNavigate } from "react-router-dom";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  // DialogDescription,
+  DialogFooter,
+} from "@/Components/ui/dialog";
+import { Button } from "@/Components/ui/button";
 
-const RenewalPopupModal = ({ onClose }) => {
+const RenewalPopupModal = ({ onClose, restaurantId, email }) => {
   const [showModal, setShowModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState(null);
   const navigate = useNavigate();
-  return (
-    <div className="fixed inset-0  bg-opacity-40 z-50 flex justify-center items-center">
-      <div className="bg-white rounded-2xl p-6 w-[512px] shadow-lg relative">
-        {/* Title */}
-        <h2 className="text-[28px] font-bold text-black mb-6">
-          Renewal Message
-        </h2>
 
-        {/* Message Box */}
-        <div className="w-full rounded-xl bg-gradient-to-r from-[rgba(106,27,154,0.08)] to-[rgba(211,47,47,0.08)] px-5 py-4 mb-8">
+  return (
+    <Dialog open={true} onOpenChange={(v) => !v && onClose && onClose()}>
+      <DialogContent className="p-6 rounded-2xl w-full max-w-[512px] shadow-lg">
+        <DialogHeader>
+          <DialogTitle className="text-[28px] font-bold text-black mb-2">
+            Renewal Message
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="w-full rounded-xl bg-gradient-to-r from-[rgba(106,27,154,0.08)] to-[rgba(211,47,47,0.08)] px-5 py-4 mb-6">
           <p className="text-[15px] text-black leading-[24px]">
             Hey ABC Restaurant, we have an amazing renewal plan for you. The
             validity of the offer is going to end in 3 days. Grab it soon before
@@ -22,37 +34,38 @@ const RenewalPopupModal = ({ onClose }) => {
           </p>
         </div>
 
-        {/* Buttons */}
-        <div className="flex gap-4">
-          {/* View Details Button with border gradient */}
-          <div className="w-1/2">
-            <div className="p-[2px] rounded-xl bg-gradient-to-r from-[#6A1B9A] to-[#D32F2F]">
-              <button
-                onClick={() => navigate("/renew-management")}
-                className="w-full text-[#6A1B9A] text-[15px] font-medium py-[14px] bg-white rounded-[10px] hover:opacity-90"
-              >
-                View Details
-              </button>
+        {errorMessage ? (
+          <div className="mb-4 text-red-600 text-sm">{errorMessage}</div>
+        ) : null}
+
+        <DialogFooter>
+          <div className="flex gap-4 w-full">
+            <div className="w-1/2">
+              <div className="p-[2px] rounded-xl bg-gradient-to-r from-[#6A1B9A] to-[#D32F2F]">
+                <Button
+                  onClick={() => navigate("/renew-management")}
+                  variant="default"
+                  className="w-full bg-white text-[#6A1B9A] hover:opacity-90 py-[14px]"
+                >
+                  View Details
+                </Button>
+              </div>
+            </div>
+
+            <div className="w-1/2">
+              <SendButton
+                className="w-full py-[14px] text-white bg-gradient-to-r from-[#6A1B9A] to-[#D32F2F]"
+                onSuccess={() => setShowModal(true)}
+                onError={(err) =>
+                  setErrorMessage(err?.message || "Failed to send")
+                }
+                restaurantId={restaurantId}
+                email={email}
+              />
             </div>
           </div>
-
-          {/* Send Renewal Message Button */}
-          <button
-            onClick={() => setShowModal(true)}
-            className="w-1/2 px-6 py-[14px] rounded-xl text-white text-[15px] font-medium bg-gradient-to-r from-[#6A1B9A] to-[#D32F2F] hover:opacity-90 transition"
-          >
-            Send Renewal Message
-          </button>
-        </div>
-
-        {/* Close Button */}
-        <button
-          onClick={onClose}
-          className="absolute top-3 right-4 text-2xl text-gray-400 hover:text-black"
-        >
-          &times;
-        </button>
-      </div>
+        </DialogFooter>
+      </DialogContent>
 
       <SuccessDialog
         open={showModal}
@@ -61,8 +74,37 @@ const RenewalPopupModal = ({ onClose }) => {
         subtitle="Renewal message sent successfully."
         ctaText="Close"
       />
-    </div>
+    </Dialog>
   );
 };
+
+function SendButton({ className, onSuccess, onError, restaurantId, email }) {
+  const mutation = useSendRenewalEmail({
+    onSuccess: (data) => {
+      if (onSuccess) onSuccess(data);
+    },
+    onError: (err) => {
+      if (onError) onError(err);
+    },
+  });
+
+  // Prefer provided props, fall back to window env or example values.
+  const restaurant_id =
+    restaurantId || window?.REACT_APP_CURRENT_RESTAURANT_ID || 1;
+  const emailValue =
+    email ||
+    window?.REACT_APP_CURRENT_RESTAURANT_EMAIL ||
+    "restaurant@example.com";
+
+  return (
+    <Button
+      onClick={() => mutation.mutate({ restaurant_id, email: emailValue })}
+      className={className}
+      disabled={mutation.isPending}
+    >
+      {mutation.isPending ? "Sending..." : "Send Renewal Message"}
+    </Button>
+  );
+}
 
 export default RenewalPopupModal;
