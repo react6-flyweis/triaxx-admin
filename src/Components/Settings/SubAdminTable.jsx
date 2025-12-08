@@ -111,7 +111,7 @@ const SubAdminTable = () => {
       </div>
 
       {/* Modals */}
-      {open && <CreateSubAdminModal onClose={() => setOpen(false)} />}
+      <CreateSubAdminModal open={open} onOpenChange={setOpen} />
 
       <ConfirmationModal
         isOpen={isModalOpen}
