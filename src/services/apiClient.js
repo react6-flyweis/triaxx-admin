@@ -5,7 +5,8 @@ import useStore from "../store/useStore";
 // VITE_API_BASE_URL (set in .env) and falls back to a common default.
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/",
-  timeout: 10000,
+  // Increase default timeout to 30s to accommodate slower endpoints
+  timeout: 30000,
 });
 
 // Attach token automatically if present
