@@ -38,6 +38,19 @@ export const subscriptionsService = {
       handleAxiosError(err);
     }
   },
+  // Get restaurant subscription list (city chart + totalSubscriptions)
+  getRestaurantSubscriptionList: async (params = {}) => {
+    try {
+      const res = await api.get(
+        `/restaurant/admin_plan_buy_restaurant/RestaurantSubscriptionList`,
+        { params }
+      );
+      return res.data; // expected shape: { success, message, data: { chart: [], totalSubscriptions: 0 } }
+    } catch (err) {
+      console.error("Error fetching restaurant subscription list:", err);
+      handleAxiosError(err);
+    }
+  },
   // Get subscription renewal alerts for restaurants
   getRestaurantSubscriptionRenewalAlert: async (params = {}) => {
     try {
