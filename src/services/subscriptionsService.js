@@ -38,4 +38,17 @@ export const subscriptionsService = {
       handleAxiosError(err);
     }
   },
+  // Get subscription renewal alerts for restaurants
+  getRestaurantSubscriptionRenewalAlert: async (params = {}) => {
+    try {
+      const res = await api.get(
+        `/restaurant/admin_plan_buy_restaurant/RestaurantSubscriptionRenewalAlert`,
+        { params }
+      );
+      return res.data; // expected shape: { success, message, count, data: { list: [] } }
+    } catch (err) {
+      console.error("Error fetching subscription renewal alerts:", err);
+      handleAxiosError(err);
+    }
+  },
 };
