@@ -47,4 +47,17 @@ export const reportsService = {
       handleAxiosError(err);
     }
   },
+  // Fetch reports stats (Total revenue, monthly recurring, top performers, etc.)
+  getReportsStats: async () => {
+    try {
+      // Use a slightly larger timeout for this endpoint specifically
+      const res = await api.get(`/restaurant/reports/ReportsStats`, {
+        timeout: 30000,
+      });
+      return res.data;
+    } catch (err) {
+      console.error("Error fetching reports stats:", err);
+      handleAxiosError(err);
+    }
+  },
 };
