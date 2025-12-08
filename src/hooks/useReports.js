@@ -27,3 +27,16 @@ export function useReportsStats(options = {}) {
   });
 }
 
+export function useRestaurantByChartByCity(options = {}) {
+  return useQuery({
+    queryKey: ["reports", "restaurantByChartByCity"],
+    queryFn: async () => {
+      const res = await reportsService.getRestaurantByChartByCity();
+      return res?.data ?? res;
+    },
+    staleTime: 1000 * 60, // 1 minute
+    retry: 1,
+    refetchOnWindowFocus: false,
+    ...options,
+  });
+}
