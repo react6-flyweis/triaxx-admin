@@ -60,4 +60,14 @@ export const reportsService = {
       handleAxiosError(err);
     }
   },
+  // Fetch restaurant chart grouped by city
+  getRestaurantByChartByCity: async () => {
+    try {
+      const res = await api.get(`/restaurant/reports/RestaurantByChartByCity`);
+      return res.data;
+    } catch (err) {
+      console.error("Error fetching restaurant chart by city:", err);
+      handleAxiosError(err);
+    }
+  },
 };
