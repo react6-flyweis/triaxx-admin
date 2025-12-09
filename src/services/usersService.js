@@ -29,6 +29,16 @@ export const usersService = {
       handleAxiosError(err);
     }
   },
+  // Deactivate (soft-delete) a user by id. Endpoint: /user/:id/deactivate
+  deactivate: async (id) => {
+    try {
+      const res = await api.patch(`${PATH}/${id}/deactivate`);
+      return res.data;
+    } catch (err) {
+      console.error(`Error deactivating user ${id}:`, err);
+      handleAxiosError(err);
+    }
+  },
 };
 
 export default usersService;
