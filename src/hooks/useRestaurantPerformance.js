@@ -5,7 +5,9 @@ export function useRestaurantPerformance(restaurantId, options = {}) {
   return useQuery({
     queryKey: ["restaurant_performance", restaurantId],
     queryFn: async () => {
-      const res = await reportsService.getRestaurantPerformance(restaurantId);
+      const res = await reportsService.getRestaurantPerformanceByQuery({
+        restaurantId,
+      });
       // reportsService returns the API response (with `data` property)
       // be resilient: return `res.data` if available, otherwise return res
       return res?.data ?? res;
