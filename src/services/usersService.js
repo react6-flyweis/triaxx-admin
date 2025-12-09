@@ -20,6 +20,15 @@ export const usersService = {
       handleAxiosError(err);
     }
   },
+  getByRoleId: async (roleId) => {
+    try {
+      const res = await api.get(`${PATH}/getbyroleid/${roleId}`);
+      return res.data;
+    } catch (err) {
+      console.error(`Error fetching users by role ${roleId}:`, err);
+      handleAxiosError(err);
+    }
+  },
 };
 
 export default usersService;
