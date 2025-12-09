@@ -1,7 +1,7 @@
 import api from "./apiClient";
 
 const PATH = "/restaurant/reports/reports";
-const PATH_ADMIN = "/admin/reports";
+// const PATH_ADMIN = "/admin/reports";
 
 // const endpointMap = {
 //   today: "reports_today",
@@ -30,18 +30,22 @@ export const reportsService = {
     }
   },
 
-  // Fetch restaurant performance by restaurant id
-  getRestaurantPerformance: async (restaurantId) => {
+  // Fetch restaurant performance using query params on the public restaurant API
+  // Example: GET /restaurant/reports/getRestaurantPerformance?restaurant_id=123&filter=24H
+  getRestaurantPerformanceByQuery: async ({ restaurantId, filter } = {}) => {
     try {
       if (!restaurantId) throw new Error("restaurantId is required");
-      // The backend uses /admin/reports/Restaurant_Performance/:id according to API
+      const params = new URLSearchParams();
+      params.append("restaurant_id", restaurantId);
+      if (filter) params.append("filter", filter);
+
       const res = await api.get(
-        `${PATH_ADMIN}/Restaurant_Performance/${restaurantId}`
+        `/restaurant/reports/getRestaurantPerformance?${params.toString()}`
       );
       return res.data;
     } catch (err) {
       console.error(
-        `Error fetching restaurant performance for id ${restaurantId}:`,
+        `Error fetching restaurant performance (query) for id ${restaurantId}:`,
         err
       );
       handleAxiosError(err);
