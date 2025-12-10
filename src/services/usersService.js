@@ -39,6 +39,16 @@ export const usersService = {
       handleAxiosError(err);
     }
   },
+  // Update user settings by id. Endpoint: /user/update
+  update: async (payload) => {
+    try {
+      const res = await api.put(`${PATH}/update`, payload);
+      return res.data;
+    } catch (err) {
+      console.error(`Error updating user:`, err);
+      handleAxiosError(err);
+    }
+  },
 };
 
 export default usersService;
