@@ -1,4 +1,5 @@
 import { Pencil } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import withAdminLayout from "../../Views/AdminPanel/withAdminLayout";
 import arrow from "../../assets/Images/Home/arrow.png";
 import deleteIcon from "../../assets/Images/Settings/1.png";
@@ -9,6 +10,7 @@ import useSubAdmins from "../../hooks/useSubAdmins";
 import useDeactivateUser from "../../hooks/useDeactivateUser";
 
 const SubAdminTable = () => {
+  const navigate = useNavigate();
   const [selectedToDelete, setSelectedToDelete] = useState(null);
   const handleOpenModal = (admin) => setSelectedToDelete(admin);
   const handleCloseModal = () => setSelectedToDelete(null);
@@ -36,7 +38,10 @@ const SubAdminTable = () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between md:items-center mb-4 gap-4">
         <h1 className="text-2xl font-bold text-gray-800 flex flex-wrap items-center gap-2 text-[28px] md:text-[32px]">
-          <span className="text-gray-400 flex items-center gap-2">
+          <span
+            className="text-gray-400 flex items-center gap-2 cursor-pointer hover:text-gray-600"
+            onClick={() => navigate("/settings")}
+          >
             Account Settings
             <img src={arrow} alt="Arrow" className="w-4 h-4 inline-block" />
           </span>
